@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.4",
+    "jsonwebtoken": "^9.0.3",
     "next": "^13.1.6",
     "node-pg-migrate": "^6.2.2",
     "pg": "^8.11.3",

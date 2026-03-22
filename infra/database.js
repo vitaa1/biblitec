@@ -1,13 +1,8 @@
-import pg, { Client } from "pg";
+import pg from "pg";
 
-const { Pool } = pg;
+const { Pool, Client } = pg;
 
 const pool = new Pool({
-  host: process.env.POSTGRES_HOST,
-  port: process.env.POSTGRES_PORT,
-  user: process.env.POSTGRES_USER,
-  database: process.env.POSTGRES_DB,
-  password: process.env.POSTGRES_PASSWORD,
   connectionString: process.env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 30000,
@@ -29,15 +24,9 @@ async function query(queryObject) {
 
 async function getNewClient() {
   const client = new Client({
-    host: process.env.POSTGRES_HOST,
-    port: process.env.POSTGRES_PORT,
-    user: process.env.POSTGRES_USER,
-    database: process.env.POSTGRES_DB,
-    password: process.env.POSTGRES_PASSWORD,
     connectionString: process.env.DATABASE_URL,
     ssl: getSSlValues(),
   });
-
   await client.connect();
   return client;
 }
@@ -54,6 +43,6 @@ function getSSlValues() {
 
 export default {
   query: query,
-  getNewClient,
+  getNewClient: getNewClient,
   pool: pool,
 };
