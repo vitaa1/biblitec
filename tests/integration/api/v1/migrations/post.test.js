@@ -5,10 +5,6 @@ async function cleanDatabase() {
   await database.query("drop schema public cascade; create schema public");
 }
 
-afterAll(async () => {
-  await database.pool.end();
-});
-
 test("POST To api/v1/migrations should return 200", async () => {
   const response1 = await fetch("http://localhost:3000/api/v1/migrations", {
     method: "POST",

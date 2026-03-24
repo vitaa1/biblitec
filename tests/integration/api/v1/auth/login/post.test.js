@@ -1,27 +1,9 @@
 import database from "infra/database.js";
-import migrationRunner from "node-pg-migrate";
-import { join } from "node:path";
 
-beforeAll(async () => {
-  await database.query("drop schema public cascade; create schema public");
-
-  const dbClient = await database.getNewClient();
-
-  await migrationRunner({
-    dbClient: dbClient,
-    databaseUrl: process.env.DATABASE_URL,
-    dryRun: false,
-    dir: join("infra", "migrations"),
-    direction: "up",
-    migrationsTable: "pgmigrations",
-  });
-
-  await dbClient.end();
-});
-
-afterAll(async () => {
-  await database.pool.end();
-});
+beforeAll(cleanDatabase);
+async function cleanDatabase() {
+  await database.query("TRUNCATE TABLE users CASCADE;");
+}
 
 test("POST to api/v1/auth/login with valid credentials should return 200", async () => {
   await fetch("http://localhost:3000/api/v1/users", {
