@@ -13,7 +13,7 @@ exports.up = (pgm) => {
     author: { type: "varchar(255)", notNull: true },
     isbn: { type: "varchar(20)", notNull: true, unique: true },
     quantity: { type: "integer", notNull: true, default: 1 },
-    avaiable: { type: "integer", notNull: true, default: 1 },
+    available: { type: "integer", notNull: true, default: 1 },
     created_at: {
       type: "timestamptz",
       notNull: true,
