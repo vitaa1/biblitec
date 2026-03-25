@@ -68,7 +68,7 @@ export class BookRepository {
     values.push(id);
     const { rows } = await database.query({
       text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} RETURNING *`,
-      values,
+      values ,
     });
     return rows[0] ?? null;
   }
@@ -76,9 +76,8 @@ export class BookRepository {
   async delete(id) {
     const { rows } = await database.query({
       text: "DELETE FROM books WHERE id = $1 RETURNING *",
-      values: [1],
+      values: [id],
     });
-
     return rows[0] ?? null;
   }
 }
