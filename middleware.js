@@ -5,6 +5,7 @@ const publicRoutes = [
   "/api/v1/users",
   "/api/v1/status",
   "/api/v1/migrations",
+  "/api/v1/books",
 ];
 
 export async function middleware(request) {

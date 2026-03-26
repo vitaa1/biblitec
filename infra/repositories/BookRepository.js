@@ -1,4 +1,4 @@
-import { database } from "infra/database.js";
+import database from "infra/database.js";
 
 export class BookRepository {
   async findAll({ limit = 20, offset = 0, search = "" }) {
@@ -68,7 +68,7 @@ export class BookRepository {
     values.push(id);
     const { rows } = await database.query({
       text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} RETURNING *`,
-      values ,
+      values,
     });
     return rows[0] ?? null;
   }
