@@ -14,11 +14,11 @@ async function create({ name, email, password }) {
 
   const result = await database.query({
     text: `
-      INSERT INTO users (name, email, password)
-      VALUES ($1, $2, $3)
+      INSERT INTO users (name, email, password, role)
+      VALUES ($1, $2, $3, $4)
       RETURNING id, name, role, created_at
     `,
-    values: [name, email, hashedPassword],
+    values: [name, email, hashedPassword, "ADMIN"],
   });
 
   return result.rows[0];

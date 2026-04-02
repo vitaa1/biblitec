@@ -41,7 +41,7 @@ async function remove(id) {
         throw error;
     }
 
-    return repository.findById(id)
+    return repository.delete(id)
 }
 
 export default { findAll, findOneById, create, update, remove }

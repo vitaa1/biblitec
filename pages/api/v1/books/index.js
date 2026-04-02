@@ -7,7 +7,7 @@ export default async function books(request, response) {
       const books = await book.findAll({ page, limit, search });
       return response.status(200).json(books);
     } catch (error) {
-      const status = (error.status_code = 500);
+      const status = error.status_code ?? 500;
       return response.status(status).json({ error: error.message });
     }
   }

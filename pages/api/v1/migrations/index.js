@@ -27,8 +27,7 @@ export default async function migrations(request, response) {
 
     if (request.method === "GET") {
       const pendingMigrations = await migrationRunner(defaultMigrationOptions);
-      await dbClient.end();
-      response.status(200).json(pendingMigrations);
+      return response.status(200).json(pendingMigrations);
     }
 
     if (request.method === "POST") {
@@ -44,8 +43,10 @@ export default async function migrations(request, response) {
     }
   } catch (error) {
     console.error(error);
-    throw error;
+    return response.status(500).json({ error: "Erro interno do servidor." });
   } finally {
-    await dbClient.end();
+    if (dbClient) {
+      await dbClient.end();
+    }
   }
 }

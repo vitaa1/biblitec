@@ -5,13 +5,14 @@ const publicRoutes = [
   "/api/v1/users",
   "/api/v1/status",
   "/api/v1/migrations",
-  "/api/v1/books",
 ];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  const isPublicBookReadRoute =
+    pathname.startsWith("/api/v1/books") && request.method === "GET";
 
-  if (publicRoutes.includes(pathname)) {
+  if (publicRoutes.includes(pathname) || isPublicBookReadRoute) {
     return NextResponse.next();
   }
 

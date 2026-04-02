@@ -5,7 +5,7 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.createExtension("uuid-ossp", { ifNotExists: true });
 
-  pgm.createType("user_role", ["ADMIN", "MEMBER"]);
+  pgm.createType("user_role", ["ADMIN"]);
 
   pgm.createTable("users", {
     id: {
@@ -16,7 +16,7 @@ exports.up = (pgm) => {
     email: { type: "varchar(255)", notNull: true, unique: true },
     password: { type: "varchar(255)", notNull: true },
     name: { type: "varchar(255)", notNull: true },
-    role: { type: "user_role", notNull: true, default: "MEMBER" },
+    role: { type: "user_role", notNull: true, default: "ADMIN" },
     created_at: {
       type: "timestamptz",
       notNull: true,

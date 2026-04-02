@@ -52,9 +52,28 @@ export class BookRepository {
   }
 
   async update(id, data) {
-    const fields = ["title", "author", "isbn", "year", "quantity"];
+    const currentBook = await this.findById(id);
+    if (!currentBook) {
+      return null;
+    }
+
+    const fields = ["title", "author", "isbn", "year", "quantity", "available_quantity"];
     const updates = [];
     const values = [];
+
+    if (data.quantity !== undefined) {
+      const borrowedQuantity = currentBook.quantity - currentBook.available_quantity;
+
+      if (data.quantity < borrowedQuantity) {
+        const error = new Error(
+          "Quantidade não pode ser menor que o número de livros emprestados.",
+        );
+        error.status_code = 409;
+        throw error;
+      }
+
+      data.available_quantity = data.quantity - borrowedQuantity;
+    }
 
     fields.forEach((field) => {
       if (data[field] !== undefined) {
