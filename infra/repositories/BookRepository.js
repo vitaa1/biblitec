@@ -57,12 +57,20 @@ export class BookRepository {
       return null;
     }
 
-    const fields = ["title", "author", "isbn", "year", "quantity", "available_quantity"];
+    const fields = [
+      "title",
+      "author",
+      "isbn",
+      "year",
+      "quantity",
+      "available_quantity",
+    ];
     const updates = [];
     const values = [];
 
     if (data.quantity !== undefined) {
-      const borrowedQuantity = currentBook.quantity - currentBook.available_quantity;
+      const borrowedQuantity =
+        currentBook.quantity - currentBook.available_quantity;
 
       if (data.quantity < borrowedQuantity) {
         const error = new Error(
@@ -93,10 +101,22 @@ export class BookRepository {
   }
 
   async delete(id) {
-    const { rows } = await database.query({
-      text: "DELETE FROM books WHERE id = $1 RETURNING *",
-      values: [id],
-    });
-    return rows[0] ?? null;
+    try {
+      const { rows } = await database.query({
+        text: "DELETE FROM books WHERE id = $1 RETURNING *",
+        values: [id],
+      });
+      return rows[0] ?? null;
+    } catch (error) {
+      if (error.code === "23503") {
+        const domainError = new Error(
+          "Livro possui empréstimos vinculados e não pode ser removido.",
+        );
+        domainError.status_code = 409;
+        throw domainError;
+      }
+
+      throw error;
+    }
   }
 }

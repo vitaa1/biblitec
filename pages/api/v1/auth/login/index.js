@@ -9,6 +9,12 @@ export default async function login(request, response) {
   try {
     const { email, password } = request.body;
 
+    if (!email || !password) {
+      return response.status(400).json({
+        error: "Email e senha são obrigatórios.",
+      });
+    }
+
     const existingUser = await user.findOneByEmail(email);
     if (!existingUser) {
       return response.status(401).json({
@@ -38,7 +44,9 @@ export default async function login(request, response) {
 
     response.setHeader(
       "Set-Cookie",
-      `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`,
+      `token=${token}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict;${
+        process.env.NODE_ENV === "production" ? " Secure;" : ""
+      }`,
     );
 
     return response.status(200).json({

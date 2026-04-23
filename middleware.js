@@ -1,18 +1,31 @@
 import { NextResponse } from "next/server";
 
-const publicRoutes = [
-  "/api/v1/auth/login",
-  "/api/v1/users",
-  "/api/v1/status",
-  "/api/v1/migrations",
+const publicRouteMatchers = [
+  ({ pathname, method }) =>
+    pathname === "/api/v1/auth/login" && method === "POST",
+  ({ pathname, method }) => pathname === "/api/v1/status" && method === "GET",
+  ({ pathname, method }) => pathname === "/api/v1/users" && method === "POST",
+];
+
+const adminRouteMatchers = [
+  ({ pathname }) => pathname === "/api/v1/migrations",
+  ({ pathname, method }) =>
+    pathname.startsWith("/api/v1/books") &&
+    ["POST", "PUT", "DELETE"].includes(method),
+  ({ pathname }) => pathname.startsWith("/api/v1/students"),
+  ({ pathname }) => pathname.startsWith("/api/v1/loans"),
 ];
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
+  const { method } = request;
   const isPublicBookReadRoute =
-    pathname.startsWith("/api/v1/books") && request.method === "GET";
+    pathname.startsWith("/api/v1/books") && method === "GET";
+  const isPublicRoute = publicRouteMatchers.some((matcher) =>
+    matcher({ pathname, method }),
+  );
 
-  if (publicRoutes.includes(pathname) || isPublicBookReadRoute) {
+  if (isPublicRoute || isPublicBookReadRoute) {
     return NextResponse.next();
   }
 
@@ -24,6 +37,13 @@ export async function middleware(request) {
 
   try {
     const decoded = await verifyJwt(token, process.env.JWT_SECRET);
+    const isAdminRoute = adminRouteMatchers.some((matcher) =>
+      matcher({ pathname, method }),
+    );
+
+    if (isAdminRoute && decoded.role !== "ADMIN") {
+      return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
+    }
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", decoded.id);

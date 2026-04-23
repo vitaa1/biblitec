@@ -100,8 +100,8 @@ test("POST /api/v1/loans with unavailable book should return 409", async () => {
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
       title: "Raro",
-      author: "X",
-      isbn: "000",
+      author: "Autor X",
+      isbn: "9788575226325",
       year: 2020,
       quantity: 1,
     }),
@@ -112,7 +112,11 @@ test("POST /api/v1/loans with unavailable book should return 409", async () => {
   await fetch("http://localhost:3000/api/v1/loans", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ student_id: studentId, book_id: bookId, due_days: 7 }),
+    body: JSON.stringify({
+      student_id: studentId,
+      book_id: bookId,
+      due_days: 7,
+    }),
   });
   // ↑ due_days estava faltando — sem ele retornava 400 e
   // available_quantity nunca era decrementada
@@ -121,7 +125,11 @@ test("POST /api/v1/loans with unavailable book should return 409", async () => {
   const response = await fetch("http://localhost:3000/api/v1/loans", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ student_id: studentId, book_id: bookId, due_days: 7 }),
+    body: JSON.stringify({
+      student_id: studentId,
+      book_id: bookId,
+      due_days: 7,
+    }),
   });
   // ↑ due_days também faltava aqui — sem ele retornava 400 em vez de 409
 

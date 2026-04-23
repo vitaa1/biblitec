@@ -16,12 +16,6 @@ export default async function books(request, response) {
     try {
       const { title, author, isbn, year, quantity } = request.body;
 
-      if (!title || !author || !isbn || !year || !quantity) {
-        return response.status(400).json({
-          error: "Campos obrigatorios: title, author, isbn, quantity.",
-        });
-      }
-
       const newBook = await book.create({
         title,
         author,
