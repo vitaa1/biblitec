@@ -4,11 +4,11 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^16.4.4",
     "jsonwebtoken": "^9.0.3",
-    "next": "^13.1.6",
+    "next": "^15.3.2",
     "node-pg-migrate": "^6.2.2",
     "pg": "^8.11.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "scripts": {
     "dev": "npm run services:up && npm run wait-for-postgres && npm run migration:up && next dev",
@@ -25,7 +25,10 @@
     "wait-for-postgres": "node infra/scripts/wait-for-postgres.js"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "concurrently": "^8.2.2",
