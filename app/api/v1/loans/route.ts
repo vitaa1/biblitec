@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
     const result = await loan.findAll({ page, limit });
     return Response.json(result);
   } catch {
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 
@@ -34,7 +37,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "book_id é obrigatório" }, { status: 400 });
     }
     if (!student_id) {
-      return Response.json({ error: "student_id é obrigatório" }, { status: 400 });
+      return Response.json(
+        { error: "student_id é obrigatório" },
+        { status: 400 },
+      );
     }
 
     const newLoan = await loan.borrow(userId, student_id, book_id, due_days);

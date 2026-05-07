@@ -63,7 +63,11 @@ test("GET /api/v1/loans should list registered loans", async () => {
   await fetch("http://localhost:3000/api/v1/loans", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ student_id: studentId, book_id: bookId, due_days: 7 }),
+    body: JSON.stringify({
+      student_id: studentId,
+      book_id: bookId,
+      due_days: 7,
+    }),
   });
 
   const response = await fetch("http://localhost:3000/api/v1/loans", {

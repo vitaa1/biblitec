@@ -63,7 +63,11 @@ test("PATCH /api/v1/loans/:id should return a loan and restore stock", async () 
   const loanResponse = await fetch("http://localhost:3000/api/v1/loans", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ student_id: studentId, book_id: bookId, due_days: 7 }),
+    body: JSON.stringify({
+      student_id: studentId,
+      book_id: bookId,
+      due_days: 7,
+    }),
   });
   const loanBody = await loanResponse.json();
 

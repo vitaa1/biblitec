@@ -14,7 +14,10 @@ function validatePaginationNumber(
 
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new AppError(`${fieldName} deve ser um número inteiro positivo.`, 400);
+    throw new AppError(
+      `${fieldName} deve ser um número inteiro positivo.`,
+      400,
+    );
   }
   return parsed;
 }
@@ -59,7 +62,11 @@ function validateBookData(
 
   if (!partial || data.year !== undefined) {
     const parsedYear = Number.parseInt(String(data.year), 10);
-    if (!Number.isInteger(parsedYear) || parsedYear < 1000 || parsedYear > currentYear) {
+    if (
+      !Number.isInteger(parsedYear) ||
+      parsedYear < 1000 ||
+      parsedYear > currentYear
+    ) {
       throw new AppError("Ano informado é inválido.", 400);
     }
     validated.year = parsedYear;
@@ -68,7 +75,10 @@ function validateBookData(
   if (!partial || data.quantity !== undefined) {
     const parsedQuantity = Number.parseInt(String(data.quantity), 10);
     if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
-      throw new AppError("Quantidade deve ser um número inteiro maior que zero.", 400);
+      throw new AppError(
+        "Quantidade deve ser um número inteiro maior que zero.",
+        400,
+      );
     }
     validated.quantity = parsedQuantity;
   }
@@ -76,14 +86,20 @@ function validateBookData(
   return validated;
 }
 
-async function findAll(opts: {
-  page?: string;
-  limit?: string;
-  search?: string;
-} = {}): Promise<Book[]> {
+async function findAll(
+  opts: {
+    page?: string;
+    limit?: string;
+    search?: string;
+  } = {},
+): Promise<Book[]> {
   const page = validatePaginationNumber(opts.page, "page", 1);
   const limit = validatePaginationNumber(opts.limit, "limit", 20);
-  return repository.findAll({ limit, offset: (page - 1) * limit, search: opts.search?.trim() ?? "" });
+  return repository.findAll({
+    limit,
+    offset: (page - 1) * limit,
+    search: opts.search?.trim() ?? "",
+  });
 }
 
 async function findOneById(id: string): Promise<Book | null> {
@@ -91,7 +107,9 @@ async function findOneById(id: string): Promise<Book | null> {
 }
 
 async function create(data: Record<string, unknown>): Promise<Book> {
-  const validated = validateBookData(data) as Required<ReturnType<typeof validateBookData>>;
+  const validated = validateBookData(data) as Required<
+    ReturnType<typeof validateBookData>
+  >;
 
   const existing = await repository.findByIsbn(validated.isbn);
   if (existing) throw new AppError("ISBN já cadastrado.", 409);
@@ -99,7 +117,10 @@ async function create(data: Record<string, unknown>): Promise<Book> {
   return repository.create(validated);
 }
 
-async function update(id: string, data: Record<string, unknown>): Promise<Book> {
+async function update(
+  id: string,
+  data: Record<string, unknown>,
+): Promise<Book> {
   const existing = await repository.findById(id);
   if (!existing) throw new AppError("Livro não encontrado.", 404);
 

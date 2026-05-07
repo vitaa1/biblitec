@@ -22,7 +22,10 @@ export async function GET() {
     return Response.json(pendingMigrations);
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   } finally {
     if (dbClient) await dbClient.end();
   }
@@ -38,13 +41,15 @@ export async function POST() {
       dryRun: false,
     });
 
-    return Response.json(
-      migratedMigrations,
-      { status: migratedMigrations.length > 0 ? 201 : 200 },
-    );
+    return Response.json(migratedMigrations, {
+      status: migratedMigrations.length > 0 ? 201 : 200,
+    });
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   } finally {
     if (dbClient) await dbClient.end();
   }

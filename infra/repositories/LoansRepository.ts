@@ -38,7 +38,8 @@ export class LoansRepository {
         values: [bookId],
       });
 
-      if (!bookRes.rows.length) throw new AppError("Livro não encontrado.", 404);
+      if (!bookRes.rows.length)
+        throw new AppError("Livro não encontrado.", 404);
       if (bookRes.rows[0].available_quantity <= 0) {
         throw new AppError("Nenhum exemplar disponivel para empréstimo.", 409);
       }

@@ -20,7 +20,13 @@ export async function PUT(request: Request, { params }: { params: Params }) {
   try {
     const { id } = await params;
     const { title, author, isbn, year, quantity } = await request.json();
-    const updated = await book.update(id, { title, author, isbn, year, quantity });
+    const updated = await book.update(id, {
+      title,
+      author,
+      isbn,
+      year,
+      quantity,
+    });
     return Response.json(updated);
   } catch (error: any) {
     const status = error.status_code ?? 500;
@@ -28,7 +34,10 @@ export async function PUT(request: Request, { params }: { params: Params }) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: Params }) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Params },
+) {
   try {
     const { id } = await params;
     await book.remove(id);

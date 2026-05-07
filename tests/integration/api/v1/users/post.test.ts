@@ -58,7 +58,9 @@ test("POST /api/v1/users should block public creation after bootstrap", async ()
   expect(response.status).toBe(401);
 
   const body = await response.json();
-  expect(body.error).toBe("Autenticação obrigatória para criar novos usuários.");
+  expect(body.error).toBe(
+    "Autenticação obrigatória para criar novos usuários.",
+  );
 });
 
 test("POST /api/v1/users should allow authenticated admin to create another user", async () => {

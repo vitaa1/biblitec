@@ -15,7 +15,10 @@ export async function POST(request: Request) {
 
     const existingUser = await user.findOneByEmail(email);
     if (!existingUser) {
-      return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
+      return Response.json(
+        { error: "Credenciais inválidas." },
+        { status: 401 },
+      );
     }
 
     const passwordMatch = await user.validatePassword(
@@ -23,7 +26,10 @@ export async function POST(request: Request) {
       existingUser.password,
     );
     if (!passwordMatch) {
-      return Response.json({ error: "Credenciais inválidas." }, { status: 401 });
+      return Response.json(
+        { error: "Credenciais inválidas." },
+        { status: 401 },
+      );
     }
 
     const token = jwt.sign(
@@ -54,6 +60,9 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

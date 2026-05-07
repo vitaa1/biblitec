@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     return Response.json(newUser, { status: 201 });
   } catch (error: any) {
     const status = error.status_code ?? 500;
-    const message = status === 500 ? "Erro interno do servidor." : error.message;
+    const message =
+      status === 500 ? "Erro interno do servidor." : error.message;
 
     if (status === 500) {
       console.error(error);

@@ -16,9 +16,14 @@ function validateName(name: unknown): string {
 }
 
 function validateRegistration(registration: unknown): string {
-  const normalized = String(registration ?? "").trim().toUpperCase();
+  const normalized = String(registration ?? "")
+    .trim()
+    .toUpperCase();
   if (normalized.length < 3) {
-    throw new AppError("Matrícula deve ter pelo menos 3 caracteres válidos.", 400);
+    throw new AppError(
+      "Matrícula deve ter pelo menos 3 caracteres válidos.",
+      400,
+    );
   }
   return normalized;
 }

@@ -66,7 +66,13 @@ export class BookRepository {
         VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING *
       `,
-      values: [data.title, data.author, data.isbn, data.year ?? null, data.quantity],
+      values: [
+        data.title,
+        data.author,
+        data.isbn,
+        data.year ?? null,
+        data.quantity,
+      ],
     });
     return rows[0];
   }
@@ -86,7 +92,8 @@ export class BookRepository {
     if (!currentBook) throw new AppError("Livro não encontrado.", 404);
 
     if (data.quantity !== undefined) {
-      const borrowedQuantity = currentBook.quantity - currentBook.available_quantity;
+      const borrowedQuantity =
+        currentBook.quantity - currentBook.available_quantity;
       if (data.quantity < borrowedQuantity) {
         throw new AppError(
           "Quantidade não pode ser menor que o número de livros emprestados.",
@@ -96,7 +103,14 @@ export class BookRepository {
       data.available_quantity = data.quantity - borrowedQuantity;
     }
 
-    const fields = ["title", "author", "isbn", "year", "quantity", "available_quantity"] as const;
+    const fields = [
+      "title",
+      "author",
+      "isbn",
+      "year",
+      "quantity",
+      "available_quantity",
+    ] as const;
     const updates: string[] = [];
     const values: unknown[] = [];
 

@@ -22,7 +22,10 @@ function validatePaginationNumber(
 
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new AppError(`${fieldName} deve ser um número inteiro positivo.`, 400);
+    throw new AppError(
+      `${fieldName} deve ser um número inteiro positivo.`,
+      400,
+    );
   }
   return parsed;
 }
@@ -34,12 +37,18 @@ async function borrow(
   dueDays: number | string,
 ): Promise<Loan> {
   if (!createdByUserId || !studentId || !bookId) {
-    throw new AppError("created_by_user_id, student_id e book_id são obrigatórios.", 400);
+    throw new AppError(
+      "created_by_user_id, student_id e book_id são obrigatórios.",
+      400,
+    );
   }
 
   const days = Number.parseInt(String(dueDays), 10);
   if (!Number.isInteger(days) || days <= 0 || days > 60) {
-    throw new AppError("due_days é obrigatório e deve ser um número entre 1 e 60.", 400);
+    throw new AppError(
+      "due_days é obrigatório e deve ser um número entre 1 e 60.",
+      400,
+    );
   }
 
   const student = await studentsRepository.findById(studentId);
@@ -55,7 +64,9 @@ async function returnBook(loanId: string): Promise<Loan> {
   return repository.returnLoan(loanId);
 }
 
-async function findAll(opts: { page?: string; limit?: string } = {}): Promise<LoanWithDetails[]> {
+async function findAll(
+  opts: { page?: string; limit?: string } = {},
+): Promise<LoanWithDetails[]> {
   const page = validatePaginationNumber(opts.page, "page", 1);
   const limit = validatePaginationNumber(opts.limit, "limit", 20);
   return repository.findAll({ limit, offset: (page - 1) * limit });

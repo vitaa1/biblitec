@@ -21,7 +21,9 @@ function validateName(name: unknown): string {
 }
 
 function validateEmail(email: unknown): string {
-  const normalized = String(email ?? "").trim().toLowerCase();
+  const normalized = String(email ?? "")
+    .trim()
+    .toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
     throw new AppError("Email inválido.", 400);
   }

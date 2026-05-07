@@ -3,7 +3,10 @@ import { type NextRequest } from "next/server";
 
 type Params = Promise<{ id: string }>;
 
-export async function PATCH(request: NextRequest, { params }: { params: Params }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Params },
+) {
   const userId = request.headers.get("x-user-id");
 
   if (!userId) {

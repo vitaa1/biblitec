@@ -12,7 +12,10 @@ export async function GET(request: NextRequest) {
     const students = await student.findAll();
     return Response.json(students);
   } catch {
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 
