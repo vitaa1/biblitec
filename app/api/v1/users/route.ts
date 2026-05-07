@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Email já cadastrado." }, { status: 409 });
     }
 
-    const newUser = await user.create({ name, email, password, role });
+    // primeiro usuário (bootstrap) sempre é ADMIN
+    const effectiveRole = totalUsers === 0 ? "ADMIN" : role;
+    const newUser = await user.create({ name, email, password, role: effectiveRole });
     return Response.json(newUser, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
