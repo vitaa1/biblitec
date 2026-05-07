@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
 
     const result = await loan.findAll({ page, limit });
     return Response.json(result);
-  } catch {
+  } catch (error) {
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },
@@ -44,7 +45,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newLoan = await loan.borrow(userId, student_id, book_id, due_days);
+    const parsedDueDays = Number.parseInt(String(due_days ?? ""), 10);
+    if (
+      !Number.isInteger(parsedDueDays) ||
+      parsedDueDays <= 0 ||
+      parsedDueDays > 60
+    ) {
+      return Response.json(
+        { error: "due_days é obrigatório e deve ser um número entre 1 e 60." },
+        { status: 400 },
+      );
+    }
+
+    const newLoan = await loan.borrow(
+      userId,
+      student_id,
+      book_id,
+      parsedDueDays,
+    );
     return Response.json(newLoan, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

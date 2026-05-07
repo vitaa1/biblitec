@@ -1,3 +1,4 @@
+import { DatabaseError } from "pg";
 import database from "infra/database";
 import { AppError } from "infra/errors";
 
@@ -26,7 +27,8 @@ export class BookRepository {
       text: `
         SELECT id, title, author, isbn, year, quantity, available_quantity, created_at
         FROM books
-        WHERE ($1 = '' OR title ILIKE '%' || $1 || '%'
+        WHERE deleted_at IS NULL
+          AND ($1 = '' OR title ILIKE '%' || $1 || '%'
                        OR author ILIKE '%' || $1 || '%'
                        OR isbn ILIKE '%' || $1 || '%')
         ORDER BY title ASC
@@ -39,7 +41,7 @@ export class BookRepository {
 
   async findById(id: string): Promise<Book | null> {
     const { rows } = await database.query({
-      text: "SELECT * FROM books WHERE id = $1 LIMIT 1",
+      text: "SELECT * FROM books WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
       values: [id],
     });
     return rows[0] ?? null;
@@ -47,7 +49,7 @@ export class BookRepository {
 
   async findByIsbn(isbn: string): Promise<Book | null> {
     const { rows } = await database.query({
-      text: "SELECT * FROM books WHERE isbn = $1 LIMIT 1",
+      text: "SELECT * FROM books WHERE isbn = $1 AND deleted_at IS NULL LIMIT 1",
       values: [isbn],
     });
     return rows[0] ?? null;
@@ -123,7 +125,7 @@ export class BookRepository {
 
     values.push(id);
     const { rows } = await database.query({
-      text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} RETURNING *`,
+      text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} AND deleted_at IS NULL RETURNING *`,
       values,
     });
     return rows[0];
@@ -132,12 +134,13 @@ export class BookRepository {
   async delete(id: string): Promise<Book> {
     try {
       const { rows } = await database.query({
-        text: "DELETE FROM books WHERE id = $1 RETURNING *",
+        text: "UPDATE books SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *",
         values: [id],
       });
+      if (!rows[0]) throw new AppError("Livro não encontrado.", 404);
       return rows[0];
     } catch (error) {
-      if ((error as { code?: string }).code === "23503") {
+      if (error instanceof DatabaseError && error.code === "23503") {
         throw new AppError(
           "Livro possui empréstimos vinculados e não pode ser removido.",
           409,
