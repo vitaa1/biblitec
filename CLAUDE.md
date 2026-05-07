@@ -45,10 +45,11 @@ Decisões de produto importantes (livro perdido, danificado, sem internet, etc.)
 ## 4. Stack
 
 - **Next.js 15** (App Router) + **TypeScript** estrito + **React 19**
-- **PostgreSQL 16** + **Drizzle ORM** + drizzle-kit
-- **Tailwind CSS 4** + **shadcn/ui**
-- **JWT** (cookie httpOnly) + **bcryptjs**
-- **Jest** + Testing Library + supertest
+- **PostgreSQL 16** + **node-pg-migrate** (migrations) + **pg** (queries raw SQL)
+- **JWT** via cookie httpOnly — assinado com `jsonwebtoken`, verificado no middleware com `jose`
+- **bcryptjs** para hash de senhas
+- **Jest** + fetch nativo para testes de integração
+- **ESLint** (`next/core-web-vitals` + `@typescript-eslint`) + **Prettier**
 - **Docker Compose** local
 
 Não troque nada disso sem abrir issue para discutir. Justificativas e alternativas descartadas em [`docs/decisions.md`](./docs/decisions.md).
@@ -59,13 +60,18 @@ Não troque nada disso sem abrir issue para discutir. Justificativas e alternati
 
 ```
 biblitec/
-├── app/             # páginas (App Router) e API routes
-├── components/      # ui/ (shadcn) + feature/ (domínio)
-├── db/              # schema, migrations, seeds
-├── lib/             # env, auth, utils
-├── models/          # ⚠ camada de domínio
-├── tests/           # integration + unit
-└── middleware.ts    # proteção de rotas
+├── app/                   # API routes (App Router)
+├── infra/
+│   ├── database.ts        # cliente pg (query, getNewClient)
+│   ├── errors.ts          # AppError
+│   ├── migrations/        # arquivos node-pg-migrate
+│   ├── repositories/      # acesso direto ao banco
+│   └── scripts/           # utilitários de infra (wait-for-postgres)
+├── models/                # ⚠ camada de domínio
+├── tests/
+│   ├── integration/       # testes de integração por rota
+│   └── orchestrator.js    # sobe Next + Postgres, roda Jest
+└── middleware.ts          # proteção de rotas (Edge Runtime, usa jose)
 ```
 
 **Regra de dependência (sentido único):**
@@ -145,14 +151,13 @@ Convenções completas (naming, datas, commits, filosofia de código) em [`docs/
 ## 9. Comandos essenciais
 
 ```bash
-npm run dev              # sobe Postgres + Next dev
-npm run db:generate      # gera migration a partir do schema
-npm run db:migrate       # aplica migrations
-npm run db:seed          # popula dados iniciais
-npm run db:studio        # abre Drizzle Studio
-npm run lint:check
-npm run typecheck
-npm test
+npm run dev                  # sobe Postgres + Next dev
+npm run migration:create     # cria novo arquivo de migration
+npm run migration:up         # aplica migrations pendentes
+npm run lint:check           # Prettier + ESLint (somente leitura)
+npm run lint:fix             # Prettier + ESLint --fix
+npm run typecheck            # tsc --noEmit
+npm test                     # sobe Postgres, roda Next dev, executa Jest
 ```
 
 Antes de declarar qualquer tarefa pronta:
@@ -169,7 +174,7 @@ npm run lint:check && npm run typecheck && npm test
 2. `git checkout -b feat/issue-NNN-descricao`
 3. Commits atômicos com Conventional Commits em português (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
 4. PR draft cedo, "ready" quando funcional + testes passando.
-5. Merge após CI verde.
+5. Merge após CI verde (`linting.yml` + `tests.yml`).
 
 PR description foca em **problema + solução**, não em código (o diff já mostra). Template e detalhes em [`docs/workflow.md`](./docs/workflow.md).
 

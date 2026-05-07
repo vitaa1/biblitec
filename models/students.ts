@@ -49,4 +49,5 @@ async function findOneById(id: string): Promise<Student | null> {
   return repository.findById(id);
 }
 
-export default { findAll, create, findOneById };
+const student = { findAll, create, findOneById };
+export default student;

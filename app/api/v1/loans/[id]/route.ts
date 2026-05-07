@@ -1,3 +1,4 @@
+import { AppError } from "infra/errors";
 import loan from "models/loans";
 import { type NextRequest } from "next/server";
 
@@ -17,8 +18,16 @@ export async function PATCH(
     const { id } = await params;
     const returned = await loan.returnBook(id);
     return Response.json(returned);
-  } catch (error: any) {
-    const status = error.status_code ?? 500;
-    return Response.json({ error: error.message }, { status });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
+    }
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
