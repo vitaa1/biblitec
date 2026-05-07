@@ -1,3 +1,4 @@
+import { jwtVerify } from "jose";
 import { type NextRequest, NextResponse } from "next/server";
 
 type RouteContext = { pathname: string; method: string };
@@ -41,7 +42,10 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const decoded = await verifyJwt(token, process.env.JWT_SECRET!);
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    const decoded = payload as { id: string; role: string };
+
     const isAdminRoute = adminRouteMatchers.some((matcher) =>
       matcher({ pathname, method }),
     );
@@ -61,53 +65,6 @@ export async function middleware(request: NextRequest) {
       { status: 401 },
     );
   }
-}
-
-async function verifyJwt(
-  token: string,
-  secret: string,
-): Promise<{ id: string; role: string; exp?: number }> {
-  const [headerB64, payloadB64, signatureB64] = token.split(".");
-
-  const encoder = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["verify"],
-  );
-
-  const valid = await crypto.subtle.verify(
-    "HMAC",
-    cryptoKey,
-    base64UrlDecode(signatureB64),
-    encoder.encode(`${headerB64}.${payloadB64}`),
-  );
-
-  if (!valid) throw new Error("Assinatura inválida.");
-
-  const rawPayload = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
-  const paddedPayload =
-    rawPayload + "=".repeat((4 - (rawPayload.length % 4)) % 4);
-  const payload = JSON.parse(atob(paddedPayload));
-
-  if (payload.exp && Date.now() / 1000 > payload.exp) {
-    throw new Error("Token expirado.");
-  }
-
-  return payload;
-}
-
-function base64UrlDecode(str: string): ArrayBuffer {
-  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-  const binary = atob(padded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
 }
 
 export const config = {
