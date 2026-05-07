@@ -143,4 +143,5 @@ async function remove(id: string): Promise<Book> {
   return repository.delete(id);
 }
 
-export default { findAll, findOneById, create, update, remove };
+const book = { findAll, findOneById, create, update, remove };
+export default book;

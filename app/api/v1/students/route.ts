@@ -1,3 +1,4 @@
+import { AppError } from "infra/errors";
 import student from "models/students";
 import { type NextRequest } from "next/server";
 
@@ -30,8 +31,16 @@ export async function POST(request: NextRequest) {
     const { name, registration } = await request.json();
     const newStudent = await student.create({ name, registration });
     return Response.json(newStudent, { status: 201 });
-  } catch (error: any) {
-    const status = error.status_code ?? 500;
-    return Response.json({ error: error.message }, { status });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
+    }
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

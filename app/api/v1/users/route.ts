@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { AppError } from "infra/errors";
 import user from "models/user";
 import { type NextRequest } from "next/server";
 
@@ -17,9 +18,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let decodedToken: any;
+      let decodedToken: { role: string };
       try {
-        decodedToken = jwt.verify(token, process.env.JWT_SECRET as string);
+        decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
+          role: string;
+        };
       } catch {
         return Response.json(
           { error: "Token inválido ou expirado." },
@@ -42,15 +45,17 @@ export async function POST(request: NextRequest) {
 
     const newUser = await user.create({ name, email, password });
     return Response.json(newUser, { status: 201 });
-  } catch (error: any) {
-    const status = error.status_code ?? 500;
-    const message =
-      status === 500 ? "Erro interno do servidor." : error.message;
-
-    if (status === 500) {
-      console.error(error);
+  } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
     }
-
-    return Response.json({ error: message }, { status });
+    console.error(error);
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

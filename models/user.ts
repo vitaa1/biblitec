@@ -80,4 +80,5 @@ async function validatePassword(
   return bcrypt.compare(providedPassword, storedPassword);
 }
 
-export default { findOneByEmail, create, countUsers, validatePassword };
+const user = { findOneByEmail, create, countUsers, validatePassword };
+export default user;

@@ -136,8 +136,8 @@ export class BookRepository {
         values: [id],
       });
       return rows[0];
-    } catch (error: any) {
-      if (error.code === "23503") {
+    } catch (error) {
+      if ((error as { code?: string }).code === "23503") {
         throw new AppError(
           "Livro possui empréstimos vinculados e não pode ser removido.",
           409,

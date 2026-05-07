@@ -1,3 +1,4 @@
+import { AppError } from "infra/errors";
 import book from "models/books";
 
 export async function GET(request: Request) {
@@ -9,9 +10,17 @@ export async function GET(request: Request) {
 
     const books = await book.findAll({ page, limit, search });
     return Response.json(books);
-  } catch (error: any) {
-    const status = error.status_code ?? 500;
-    return Response.json({ error: error.message }, { status });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
+    }
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 
@@ -20,8 +29,16 @@ export async function POST(request: Request) {
     const { title, author, isbn, year, quantity } = await request.json();
     const newBook = await book.create({ title, author, isbn, year, quantity });
     return Response.json(newBook, { status: 201 });
-  } catch (error: any) {
-    const status = error.status_code ?? 500;
-    return Response.json({ error: error.message }, { status });
+  } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
+    }
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

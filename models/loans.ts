@@ -72,4 +72,5 @@ async function findAll(
   return repository.findAll({ limit, offset: (page - 1) * limit });
 }
 
-export default { borrow, returnBook, findAll };
+const loan = { borrow, returnBook, findAll };
+export default loan;
