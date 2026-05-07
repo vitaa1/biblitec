@@ -22,9 +22,9 @@ async function createUserAndLogin(): Promise<string> {
     body: JSON.stringify({ email: "test@gmail.com", password: "senha123" }),
   });
 
-  const cookie = loginRes.headers.get("set-cookie");
-  if (!cookie) throw new Error("Login falhou: cookie não retornado");
-  return cookie;
+  const rawCookie = loginRes.headers.get("set-cookie");
+  if (!rawCookie) throw new Error("Login falhou: cookie não retornado");
+  return rawCookie.split(";")[0].trim();
 }
 
 test("POST /api/v1/books should create a book and return 201", async () => {

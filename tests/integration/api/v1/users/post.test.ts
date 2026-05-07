@@ -12,9 +12,9 @@ async function login(email: string, password: string): Promise<string> {
     body: JSON.stringify({ email, password }),
   });
 
-  const cookie = response.headers.get("set-cookie");
-  if (!cookie) throw new Error("Login falhou: cookie não retornado");
-  return cookie;
+  const rawCookie = response.headers.get("set-cookie");
+  if (!rawCookie) throw new Error("Login falhou: cookie não retornado");
+  return rawCookie.split(";")[0].trim();
 }
 
 test("POST /api/v1/users should allow bootstrap of the first admin", async () => {
