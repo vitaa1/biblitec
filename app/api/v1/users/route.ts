@@ -45,7 +45,12 @@ export async function POST(request: NextRequest) {
 
     // primeiro usuário (bootstrap) sempre é ADMIN
     const effectiveRole = totalUsers === 0 ? "ADMIN" : role;
-    const newUser = await user.create({ name, email, password, role: effectiveRole });
+    const newUser = await user.create({
+      name,
+      email,
+      password,
+      role: effectiveRole,
+    });
     return Response.json(newUser, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
