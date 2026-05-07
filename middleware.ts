@@ -87,9 +87,10 @@ async function verifyJwt(
 
   if (!valid) throw new Error("Assinatura inválida.");
 
-  const payload = JSON.parse(
-    atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/")),
-  );
+  const rawPayload = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+  const paddedPayload =
+    rawPayload + "=".repeat((4 - (rawPayload.length % 4)) % 4);
+  const payload = JSON.parse(atob(paddedPayload));
 
   if (payload.exp && Date.now() / 1000 > payload.exp) {
     throw new Error("Token expirado.");
@@ -100,7 +101,8 @@ async function verifyJwt(
 
 function base64UrlDecode(str: string): ArrayBuffer {
   const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
-  const binary = atob(base64);
+  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+  const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
