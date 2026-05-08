@@ -2,7 +2,7 @@ import database from "infra/database";
 
 beforeAll(cleanDatabase);
 async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE users CASCADE;" });
+  await database.query({ text: "TRUNCATE TABLE usuarios CASCADE;" });
 }
 
 test("POST to api/v1/auth/login with valid credentials should return 200", async () => {
@@ -10,9 +10,9 @@ test("POST to api/v1/auth/login with valid credentials should return 200", async
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@test.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 

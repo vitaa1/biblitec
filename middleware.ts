@@ -44,19 +44,19 @@ export async function middleware(request: NextRequest) {
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    const decoded = payload as { id: string; role: string };
+    const decoded = payload as { id: string; papel: string };
 
     const isAdminRoute = adminRouteMatchers.some((matcher) =>
       matcher({ pathname, method }),
     );
 
-    if (isAdminRoute && decoded.role !== "ADMIN") {
+    if (isAdminRoute && decoded.papel !== "ADMIN") {
       return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
     }
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", decoded.id);
-    requestHeaders.set("x-user-role", decoded.role);
+    requestHeaders.set("x-user-role", decoded.papel);
 
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {

@@ -3,7 +3,7 @@ import database from "infra/database";
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
   await database.query({
-    text: "TRUNCATE TABLE loans, books, students, users CASCADE;",
+    text: "TRUNCATE TABLE emprestimos, livros, leitores, usuarios CASCADE;",
   });
 }
 
@@ -12,9 +12,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -34,11 +34,11 @@ async function createBook(cookie: string) {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Clean Code",
-      author: "Robert Martin",
+      titulo: "Clean Code",
+      autor: "Robert Martin",
       isbn: "978-0132350884",
-      year: 2008,
-      quantity: 3,
+      ano: 2008,
+      quantidade: 3,
     }),
   });
   if (!res.ok) throw new Error(`Falha ao criar livro: ${res.status}`);
@@ -49,9 +49,9 @@ async function createStudent(cookie: string) {
   const res = await fetch("http://localhost:3000/api/v1/students", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ name: "Ana Lúcia", registration: "20240001" }),
+    body: JSON.stringify({ nome: "Ana Lúcia", matricula: "20240001" }),
   });
-  if (!res.ok) throw new Error(`Falha ao criar aluno: ${res.status}`);
+  if (!res.ok) throw new Error(`Falha ao criar leitor: ${res.status}`);
   return res.json();
 }
 
@@ -109,9 +109,9 @@ test("DELETE /api/v1/books/:id with active loan should return 409", async () => 
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      book_id: book.id,
-      student_id: student.id,
-      due_days: 14,
+      livro_id: book.id,
+      leitor_id: student.id,
+      dias_prazo: 14,
     }),
   });
 

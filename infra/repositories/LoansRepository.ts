@@ -3,22 +3,22 @@ import { AppError } from "infra/errors";
 
 export interface Loan {
   id: string;
-  student_id: string;
-  created_by_user_id: string;
-  book_id: string;
-  loaned_at: string;
-  due_date: string;
-  returned_at: string | null;
+  leitor_id: string;
+  criado_por_usuario_id: string;
+  livro_id: string;
+  emprestado_em: string;
+  data_devolucao: string;
+  devolvido_em: string | null;
   status: "ACTIVE" | "RETURNED" | "OVERDUE";
 }
 
 export interface LoanWithDetails extends Loan {
-  title: string;
-  author: string;
-  student_name: string;
-  registration: string;
-  created_by_name: string;
-  created_by_email: string;
+  titulo: string;
+  autor: string;
+  nome_leitor: string;
+  matricula: string;
+  nome_criado_por: string;
+  email_criado_por: string;
 }
 
 export class LoansRepository {
@@ -34,34 +34,34 @@ export class LoansRepository {
       await client.query("BEGIN");
 
       const bookRes = await client.query({
-        text: "SELECT available_quantity FROM books WHERE id = $1 FOR UPDATE",
+        text: "SELECT quantidade_disponivel FROM livros WHERE id = $1 FOR UPDATE",
         values: [bookId],
       });
 
       if (!bookRes.rows.length)
         throw new AppError("Livro não encontrado.", 404);
-      if (bookRes.rows[0].available_quantity <= 0) {
-        throw new AppError("Nenhum exemplar disponivel para empréstimo.", 409);
+      if (bookRes.rows[0].quantidade_disponivel <= 0) {
+        throw new AppError("Nenhum exemplar disponível para empréstimo.", 409);
       }
 
       const duplicate = await client.query({
-        text: `SELECT id FROM loans WHERE student_id = $1 AND book_id = $2 AND returned_at IS NULL`,
+        text: `SELECT id FROM emprestimos WHERE leitor_id = $1 AND livro_id = $2 AND devolvido_em IS NULL`,
         values: [studentId, bookId],
       });
 
       if (duplicate.rows.length) {
-        throw new AppError("Você ja possui este livro emprestado.", 409);
+        throw new AppError("Você já possui este livro emprestado.", 409);
       }
 
       const loansRes = await client.query({
-        text: `INSERT INTO loans (student_id, created_by_user_id, book_id, due_date)
+        text: `INSERT INTO emprestimos (leitor_id, criado_por_usuario_id, livro_id, data_devolucao)
                VALUES ($1, $2, $3, NOW() + make_interval(days => $4))
                RETURNING *`,
         values: [studentId, createdByUserId, bookId, dueDays],
       });
 
       await client.query({
-        text: "UPDATE books SET available_quantity = available_quantity - 1 WHERE id = $1",
+        text: "UPDATE livros SET quantidade_disponivel = quantidade_disponivel - 1 WHERE id = $1",
         values: [bookId],
       });
 
@@ -82,7 +82,7 @@ export class LoansRepository {
       await client.query("BEGIN");
 
       const loansRes = await client.query({
-        text: `SELECT * FROM loans WHERE id = $1 AND returned_at IS NULL`,
+        text: `SELECT * FROM emprestimos WHERE id = $1 AND devolvido_em IS NULL`,
         values: [loanId],
       });
 
@@ -93,13 +93,13 @@ export class LoansRepository {
       const loan: Loan = loansRes.rows[0];
 
       const updated = await client.query({
-        text: `UPDATE loans SET returned_at = NOW(), status = 'RETURNED' WHERE id = $1 RETURNING *`,
+        text: `UPDATE emprestimos SET devolvido_em = NOW(), status = 'RETURNED' WHERE id = $1 RETURNING *`,
         values: [loanId],
       });
 
       await client.query({
-        text: "UPDATE books SET available_quantity = available_quantity + 1 WHERE id = $1",
-        values: [loan.book_id],
+        text: "UPDATE livros SET quantidade_disponivel = quantidade_disponivel + 1 WHERE id = $1",
+        values: [loan.livro_id],
       });
 
       await client.query("COMMIT");
@@ -123,17 +123,17 @@ export class LoansRepository {
       text: `
         SELECT
           l.*,
-          b.title,
-          b.author,
-          s.name AS student_name,
-          s.registration,
-          u.name AS created_by_name,
-          u.email AS created_by_email
-        FROM loans l
-        JOIN books b ON l.book_id = b.id
-        JOIN students s ON l.student_id = s.id
-        JOIN users u ON l.created_by_user_id = u.id
-        ORDER BY l.loaned_at DESC
+          b.titulo,
+          b.autor,
+          s.nome AS nome_leitor,
+          s.matricula,
+          u.nome AS nome_criado_por,
+          u.email AS email_criado_por
+        FROM emprestimos l
+        JOIN livros b ON l.livro_id = b.id
+        JOIN leitores s ON l.leitor_id = s.id
+        JOIN usuarios u ON l.criado_por_usuario_id = u.id
+        ORDER BY l.emprestado_em DESC
         LIMIT $1 OFFSET $2
       `,
       values: [limit, offset],

@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     const passwordMatch = await user.validatePassword(
       password,
-      existingUser.password,
+      existingUser.senha,
     );
     if (!passwordMatch) {
       return Response.json(
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       {
         id: existingUser.id,
         email: existingUser.email,
-        role: existingUser.role,
+        papel: existingUser.papel,
       },
       process.env.JWT_SECRET as string,
       { expiresIn: "1d" },
@@ -44,9 +44,9 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       id: existingUser.id,
-      name: existingUser.name,
+      nome: existingUser.nome,
       email: existingUser.email,
-      role: existingUser.role,
+      papel: existingUser.papel,
     });
 
     response.cookies.set("token", token, {

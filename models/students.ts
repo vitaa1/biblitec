@@ -8,15 +8,15 @@ export type { Student };
 
 const repository = new StudentsRepository();
 
-function validateName(name: unknown): string {
-  if (typeof name !== "string" || name.trim().length < 3) {
+function validateNome(nome: unknown): string {
+  if (typeof nome !== "string" || nome.trim().length < 3) {
     throw new AppError("Nome deve ter pelo menos 3 caracteres.", 400);
   }
-  return name.trim();
+  return nome.trim();
 }
 
-function validateRegistration(registration: unknown): string {
-  const normalized = String(registration ?? "")
+function validateMatricula(matricula: unknown): string {
+  const normalized = String(matricula ?? "")
     .trim()
     .toUpperCase();
   if (normalized.length < 3) {
@@ -33,16 +33,16 @@ async function findAll(): Promise<Student[]> {
 }
 
 async function create(data: {
-  name: unknown;
-  registration: unknown;
+  nome: unknown;
+  matricula: unknown;
 }): Promise<Student> {
-  const name = validateName(data.name);
-  const registration = validateRegistration(data.registration);
+  const nome = validateNome(data.nome);
+  const matricula = validateMatricula(data.matricula);
 
-  const existing = await repository.findByRegistration(registration);
+  const existing = await repository.findByRegistration(matricula);
   if (existing) throw new AppError("Matrícula já cadastrada.", 409);
 
-  return repository.create({ name, registration });
+  return repository.create({ nome, matricula });
 }
 
 async function findOneById(id: string): Promise<Student | null> {

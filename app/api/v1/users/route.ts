@@ -1,11 +1,17 @@
 import jwt from "jsonwebtoken";
 import { AppError } from "infra/errors";
+import { createUserSchema, parseBody } from "infra/schemas";
 import user from "models/user";
 import { type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password, role } = await request.json();
+    const body = await request.json();
+    const parsed = parseBody(createUserSchema, body);
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error }, { status: 400 });
+    }
+    const { nome, email, senha, papel } = parsed.data;
     const totalUsers = await user.countUsers();
 
     if (totalUsers > 0) {
@@ -18,10 +24,10 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      let decodedToken: { role: string };
+      let decodedToken: { papel: string };
       try {
         decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
-          role: string;
+          papel: string;
         };
       } catch {
         return Response.json(
@@ -30,7 +36,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (decodedToken.role !== "ADMIN") {
+      if (decodedToken.papel !== "ADMIN") {
         return Response.json(
           { error: "Apenas administradores podem criar novos usuários." },
           { status: 403 },
@@ -44,12 +50,12 @@ export async function POST(request: NextRequest) {
     }
 
     // primeiro usuário (bootstrap) sempre é ADMIN
-    const effectiveRole = totalUsers === 0 ? "ADMIN" : role;
+    const effectivePapel = totalUsers === 0 ? "ADMIN" : papel;
     const newUser = await user.create({
-      name,
+      nome,
       email,
-      password,
-      role: effectiveRole,
+      senha,
+      papel: effectivePapel,
     });
     return Response.json(newUser, { status: 201 });
   } catch (error) {

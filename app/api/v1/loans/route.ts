@@ -1,4 +1,5 @@
 import { AppError } from "infra/errors";
+import { createLoanSchema, parseBody } from "infra/schemas";
 import loan from "models/loans";
 import { type NextRequest } from "next/server";
 
@@ -39,19 +40,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { student_id, book_id, due_days } = await request.json();
-
-    if (!book_id) {
-      return Response.json({ error: "book_id é obrigatório" }, { status: 400 });
+    const body = await request.json();
+    const parsed = parseBody(createLoanSchema, body);
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error }, { status: 400 });
     }
-    if (!student_id) {
-      return Response.json(
-        { error: "student_id é obrigatório" },
-        { status: 400 },
-      );
-    }
-
-    const newLoan = await loan.borrow(userId, student_id, book_id, due_days);
+    const newLoan = await loan.borrow(
+      userId,
+      parsed.data.leitor_id,
+      parsed.data.livro_id,
+      parsed.data.dias_prazo,
+    );
     return Response.json(newLoan, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

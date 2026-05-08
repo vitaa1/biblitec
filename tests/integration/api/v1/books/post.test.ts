@@ -2,7 +2,7 @@ import database from "infra/database";
 
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE books, users CASCADE;" });
+  await database.query({ text: "TRUNCATE TABLE livros, usuarios CASCADE;" });
 }
 
 async function createUserAndLogin(): Promise<string> {
@@ -10,9 +10,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -34,19 +34,19 @@ test("POST /api/v1/books should create a book and return 201", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Clean Code",
-      author: "Robert Martin",
+      titulo: "Clean Code",
+      autor: "Robert Martin",
       isbn: "978-0132350884",
-      year: 2008,
-      quantity: 3,
+      ano: 2008,
+      quantidade: 3,
     }),
   });
 
   expect(response.status).toBe(201);
 
   const body = await response.json();
-  expect(body.title).toBe("Clean Code");
-  expect(body.available_quantity).toBe(3);
+  expect(body.titulo).toBe("Clean Code");
+  expect(body.quantidade_disponivel).toBe(3);
   expect(body.id).toBeDefined();
 });
 
@@ -56,7 +56,7 @@ test("POST /api/v1/books with missing fields should return 400", async () => {
   const response = await fetch("http://localhost:3000/api/v1/books", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ title: "Sem autor " }),
+    body: JSON.stringify({ titulo: "Sem autor " }),
   });
 
   expect(response.status).toBe(400);
@@ -65,11 +65,11 @@ test("POST /api/v1/books with missing fields should return 400", async () => {
 test("POST /api/v1/books with duplicate ISBN should return 409", async () => {
   const cookie = await createUserAndLogin();
   const bookData = {
-    title: "Clean Code",
-    author: "Robert Martin",
+    titulo: "Clean Code",
+    autor: "Robert Martin",
     isbn: "978-0132350884",
-    year: 2008,
-    quantity: 2,
+    ano: 2008,
+    quantidade: 2,
   };
 
   await fetch("http://localhost:3000/api/v1/books", {

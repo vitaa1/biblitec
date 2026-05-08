@@ -2,43 +2,43 @@ import database from "infra/database";
 
 export interface Student {
   id: string;
-  name: string;
-  registration: string;
-  created_at: string;
+  nome: string;
+  matricula: string;
+  criado_em: string;
 }
 
 export class StudentsRepository {
   async findAll(): Promise<Student[]> {
     const { rows } = await database.query({
-      text: "SELECT * FROM students ORDER BY name ASC",
+      text: "SELECT * FROM leitores ORDER BY nome ASC",
     });
     return rows;
   }
 
-  async findByRegistration(registration: string): Promise<Student | null> {
+  async findByRegistration(matricula: string): Promise<Student | null> {
     const { rows } = await database.query({
-      text: "SELECT * FROM students WHERE registration = $1 LIMIT 1",
-      values: [registration],
+      text: "SELECT * FROM leitores WHERE matricula = $1 LIMIT 1",
+      values: [matricula],
     });
     return rows[0] ?? null;
   }
 
   async findById(id: string): Promise<Student | null> {
     const { rows } = await database.query({
-      text: "SELECT * FROM students WHERE id = $1 LIMIT 1",
+      text: "SELECT * FROM leitores WHERE id = $1 LIMIT 1",
       values: [id],
     });
     return rows[0] ?? null;
   }
 
-  async create(data: { name: string; registration: string }): Promise<Student> {
+  async create(data: { nome: string; matricula: string }): Promise<Student> {
     const { rows } = await database.query({
       text: `
-        INSERT INTO students (name, registration)
+        INSERT INTO leitores (nome, matricula)
         VALUES ($1, $2)
         RETURNING *
       `,
-      values: [data.name, data.registration],
+      values: [data.nome, data.matricula],
     });
     return rows[0];
   }

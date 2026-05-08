@@ -22,7 +22,7 @@ async function run() {
     await require("../infra/scripts/wait-for-postgres").waitForPostgres();
 
     console.log("\nAplicando migrations...");
-    await runCommand("npm", ["run", "migration:up"]);
+    await runCommand("npm", ["run", "db:migrate"]);
 
     console.log("\nSubindo a aplicação Next...");
     nextProcess = spawn(nextBin, ["dev", "-p", "3000"], {

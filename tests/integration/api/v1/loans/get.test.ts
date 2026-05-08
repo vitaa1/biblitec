@@ -3,7 +3,7 @@ import database from "infra/database";
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
   await database.query({
-    text: "TRUNCATE TABLE loans, books, students, users CASCADE;",
+    text: "TRUNCATE TABLE emprestimos, livros, leitores, usuarios CASCADE;",
   });
 }
 
@@ -12,9 +12,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -33,7 +33,7 @@ async function createStudent(cookie: string): Promise<string> {
   const res = await fetch("http://localhost:3000/api/v1/students", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ name: "Aluno Teste", registration: "MAT-001" }),
+    body: JSON.stringify({ nome: "Aluno Teste", matricula: "MAT-001" }),
   });
   const body = await res.json();
   return body.id;
@@ -44,11 +44,11 @@ async function createBook(cookie: string): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Clean Code",
-      author: "Robert Martin",
+      titulo: "Clean Code",
+      autor: "Robert Martin",
       isbn: "978-0132350884",
-      year: 2008,
-      quantity: 2,
+      ano: 2008,
+      quantidade: 2,
     }),
   });
   const body = await res.json();
@@ -64,9 +64,9 @@ test("GET /api/v1/loans should list registered loans", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      student_id: studentId,
-      book_id: bookId,
-      due_days: 7,
+      leitor_id: studentId,
+      livro_id: bookId,
+      dias_prazo: 7,
     }),
   });
 
@@ -80,8 +80,8 @@ test("GET /api/v1/loans should list registered loans", async () => {
   const body = await response.json();
   expect(Array.isArray(body)).toBe(true);
   expect(body).toHaveLength(1);
-  expect(body[0].student_id).toBe(studentId);
-  expect(body[0].book_id).toBe(bookId);
-  expect(body[0].student_name).toBe("Aluno Teste");
-  expect(body[0].created_by_name).toBe("Test User");
+  expect(body[0].leitor_id).toBe(studentId);
+  expect(body[0].livro_id).toBe(bookId);
+  expect(body[0].nome_leitor).toBe("Aluno Teste");
+  expect(body[0].nome_criado_por).toBe("Test User");
 });

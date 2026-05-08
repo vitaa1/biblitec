@@ -1,17 +1,12 @@
 import bcrypt from "bcryptjs";
-import database from "infra/database";
 import { AppError } from "infra/errors";
+import { UserRepository, type User } from "infra/repositories/UserRepository";
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: "ADMIN" | "USER";
-  created_at: string;
-}
+export type { User };
 
-export type PublicUser = Omit<User, "password">;
+export type PublicUser = Omit<User, "senha">;
+
+const repository = new UserRepository();
 
 function validateName(name: unknown): string {
   if (typeof name !== "string" || name.trim().length < 3) {
@@ -38,42 +33,39 @@ function validateNewPassword(password: unknown): string {
 }
 
 async function findOneByEmail(email: string): Promise<User | null> {
-  const result = await database.query({
-    text: "SELECT * FROM users WHERE email = $1 LIMIT 1",
-    values: [email],
-  });
-  return result.rows[0] ?? null;
+  return repository.findByEmail(email);
 }
 
 async function create(data: {
-  name: unknown;
+  nome: unknown;
   email: unknown;
-  password: unknown;
-  role?: "ADMIN" | "USER";
+  senha: unknown;
+  papel?: "ADMIN" | "USER";
 }): Promise<PublicUser> {
-  const name = validateName(data.name);
+  const nome = validateName(data.nome);
   const email = validateEmail(data.email);
-  const password = validateNewPassword(data.password);
+  const password = validateNewPassword(data.senha);
   const hashedPassword = await bcrypt.hash(password, 10);
-  const role: "ADMIN" | "USER" =
-    data.role === "ADMIN" || data.role === "USER" ? data.role : "USER";
+  const papel: "ADMIN" | "USER" =
+    data.papel === "ADMIN" || data.papel === "USER" ? data.papel : "USER";
 
-  const result = await database.query({
-    text: `
-      INSERT INTO users (name, email, password, role)
-      VALUES ($1, $2, $3, $4)
-      RETURNING id, name, email, role, created_at
-    `,
-    values: [name, email, hashedPassword, role],
+  const created = await repository.create({
+    nome,
+    email,
+    senha: hashedPassword,
+    papel,
   });
-  return result.rows[0];
+  return {
+    id: created.id,
+    nome: created.nome,
+    email: created.email,
+    papel: created.papel,
+    criado_em: created.criado_em,
+  };
 }
 
 async function countUsers(): Promise<number> {
-  const result = await database.query({
-    text: "SELECT COUNT(*)::int AS total FROM users",
-  });
-  return result.rows[0].total;
+  return repository.countUsers();
 }
 
 async function validatePassword(

@@ -1,4 +1,5 @@
 import { AppError } from "infra/errors";
+import { createStudentSchema, parseBody } from "infra/schemas";
 import student from "models/students";
 import { type NextRequest } from "next/server";
 
@@ -28,8 +29,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { name, registration } = await request.json();
-    const newStudent = await student.create({ name, registration });
+    const body = await request.json();
+    const parsed = parseBody(createStudentSchema, body);
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error }, { status: 400 });
+    }
+    const newStudent = await student.create(parsed.data);
     return Response.json(newStudent, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

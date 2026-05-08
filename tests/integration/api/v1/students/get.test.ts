@@ -2,7 +2,7 @@ import database from "infra/database";
 
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE students, users CASCADE;" });
+  await database.query({ text: "TRUNCATE TABLE leitores, usuarios CASCADE;" });
 }
 
 async function createUserAndLogin(): Promise<string> {
@@ -10,9 +10,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -33,7 +33,7 @@ test("GET /api/v1/students should list registered students", async () => {
   await fetch("http://localhost:3000/api/v1/students", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ name: "Aluno Teste", registration: "MAT-001" }),
+    body: JSON.stringify({ nome: "Aluno Teste", matricula: "MAT-001" }),
   });
 
   const response = await fetch("http://localhost:3000/api/v1/students", {
@@ -46,5 +46,5 @@ test("GET /api/v1/students should list registered students", async () => {
   const body = await response.json();
   expect(Array.isArray(body)).toBe(true);
   expect(body).toHaveLength(1);
-  expect(body[0].name).toBe("Aluno Teste");
+  expect(body[0].nome).toBe("Aluno Teste");
 });

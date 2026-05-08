@@ -22,7 +22,7 @@ async function borrow(
 ): Promise<Loan> {
   if (!createdByUserId || !studentId || !bookId) {
     throw new AppError(
-      "created_by_user_id, student_id e book_id são obrigatórios.",
+      "criado_por_usuario_id, leitor_id e livro_id são obrigatórios.",
       400,
     );
   }
@@ -30,13 +30,13 @@ async function borrow(
   const days = Number.parseInt(String(dueDays ?? ""), 10);
   if (!Number.isInteger(days) || days <= 0 || days > 60) {
     throw new AppError(
-      "due_days é obrigatório e deve ser um número entre 1 e 60.",
+      "dias_prazo é obrigatório e deve ser um número entre 1 e 60.",
       400,
     );
   }
 
   const student = await studentsRepository.findById(studentId);
-  if (!student) throw new AppError("Aluno não encontrado.", 404);
+  if (!student) throw new AppError("Leitor não encontrado.", 404);
 
   const book = await booksRepository.findById(bookId);
   if (!book) throw new AppError("Livro não encontrado.", 404);
