@@ -113,12 +113,8 @@
           "name": "emprestimos_leitor_id_leitores_id_fk",
           "tableFrom": "emprestimos",
           "tableTo": "leitores",
-          "columnsFrom": [
-            "leitor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["leitor_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -126,12 +122,8 @@
           "name": "emprestimos_criado_por_usuario_id_usuarios_id_fk",
           "tableFrom": "emprestimos",
           "tableTo": "usuarios",
-          "columnsFrom": [
-            "criado_por_usuario_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["criado_por_usuario_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -139,12 +131,8 @@
           "name": "emprestimos_livro_id_livros_id_fk",
           "tableFrom": "emprestimos",
           "tableTo": "livros",
-          "columnsFrom": [
-            "livro_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["livro_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -193,9 +181,7 @@
         "leitores_matricula_unique": {
           "name": "leitores_matricula_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "matricula"
-          ]
+          "columns": ["matricula"]
         }
       },
       "policies": {},
@@ -272,9 +258,7 @@
         "livros_isbn_unique": {
           "name": "livros_isbn_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "isbn"
-          ]
+          "columns": ["isbn"]
         }
       },
       "policies": {},
@@ -340,9 +324,7 @@
         "usuarios_email_unique": {
           "name": "usuarios_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -354,19 +336,12 @@
     "public.papel_usuario": {
       "name": "papel_usuario",
       "schema": "public",
-      "values": [
-        "ADMIN",
-        "USER"
-      ]
+      "values": ["ADMIN", "USER"]
     },
     "public.status_emprestimo": {
       "name": "status_emprestimo",
       "schema": "public",
-      "values": [
-        "ACTIVE",
-        "RETURNED",
-        "OVERDUE"
-      ]
+      "values": ["ACTIVE", "RETURNED", "OVERDUE"]
     }
   },
   "schemas": {},
