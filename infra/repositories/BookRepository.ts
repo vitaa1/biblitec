@@ -12,6 +12,9 @@ export interface Book {
   created_at: string;
 }
 
+const BOOK_COLUMNS =
+  "id, title, author, isbn, year, quantity, available_quantity, created_at";
+
 export class BookRepository {
   async findAll({
     limit = 20,
@@ -24,9 +27,10 @@ export class BookRepository {
   }): Promise<Book[]> {
     const { rows } = await database.query({
       text: `
-        SELECT id, title, author, isbn, year, quantity, available_quantity, created_at
+        SELECT ${BOOK_COLUMNS}
         FROM books
-        WHERE ($1 = '' OR title ILIKE '%' || $1 || '%'
+        WHERE deleted_at IS NULL
+          AND ($1 = '' OR title ILIKE '%' || $1 || '%'
                        OR author ILIKE '%' || $1 || '%'
                        OR isbn ILIKE '%' || $1 || '%')
         ORDER BY title ASC
@@ -39,7 +43,7 @@ export class BookRepository {
 
   async findById(id: string): Promise<Book | null> {
     const { rows } = await database.query({
-      text: "SELECT * FROM books WHERE id = $1 LIMIT 1",
+      text: `SELECT ${BOOK_COLUMNS} FROM books WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
       values: [id],
     });
     return rows[0] ?? null;
@@ -47,7 +51,7 @@ export class BookRepository {
 
   async findByIsbn(isbn: string): Promise<Book | null> {
     const { rows } = await database.query({
-      text: "SELECT * FROM books WHERE isbn = $1 LIMIT 1",
+      text: `SELECT ${BOOK_COLUMNS} FROM books WHERE isbn = $1 AND deleted_at IS NULL LIMIT 1`,
       values: [isbn],
     });
     return rows[0] ?? null;
@@ -64,7 +68,7 @@ export class BookRepository {
       text: `
         INSERT INTO books (title, author, isbn, year, quantity, available_quantity)
         VALUES ($1, $2, $3, $4, $5, $5)
-        RETURNING *
+        RETURNING ${BOOK_COLUMNS}
       `,
       values: [
         data.title,
@@ -100,7 +104,8 @@ export class BookRepository {
           409,
         );
       }
-      data.available_quantity = data.quantity - borrowedQuantity;
+      const newAvailable = data.quantity - borrowedQuantity;
+      data = { ...data, available_quantity: newAvailable };
     }
 
     const fields = [
@@ -123,27 +128,40 @@ export class BookRepository {
 
     values.push(id);
     const { rows } = await database.query({
-      text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} RETURNING *`,
+      text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} AND deleted_at IS NULL RETURNING ${BOOK_COLUMNS}`,
       values,
     });
     return rows[0];
   }
 
   async delete(id: string): Promise<Book> {
-    try {
-      const { rows } = await database.query({
-        text: "DELETE FROM books WHERE id = $1 RETURNING *",
+    const { rows } = await database.query({
+      text: `
+        UPDATE books
+        SET deleted_at = NOW()
+        WHERE id = $1
+          AND deleted_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM loans
+            WHERE book_id = $1 AND returned_at IS NULL
+          )
+        RETURNING ${BOOK_COLUMNS}
+      `,
+      values: [id],
+    });
+
+    if (!rows[0]) {
+      const { rows: found } = await database.query({
+        text: "SELECT 1 FROM books WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
         values: [id],
       });
-      return rows[0];
-    } catch (error) {
-      if ((error as { code?: string }).code === "23503") {
-        throw new AppError(
-          "Livro possui empréstimos vinculados e não pode ser removido.",
-          409,
-        );
-      }
-      throw error;
+      if (!found.length) throw new AppError("Livro não encontrado.", 404);
+      throw new AppError(
+        "Livro possui empréstimos em aberto e não pode ser removido.",
+        409,
+      );
     }
+
+    return rows[0];
   }
 }

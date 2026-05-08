@@ -5,7 +5,7 @@ import { type NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, password } = await request.json();
+    const { name, email, password, role } = await request.json();
     const totalUsers = await user.countUsers();
 
     if (totalUsers > 0) {
@@ -43,7 +43,14 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Email já cadastrado." }, { status: 409 });
     }
 
-    const newUser = await user.create({ name, email, password });
+    // primeiro usuário (bootstrap) sempre é ADMIN
+    const effectiveRole = totalUsers === 0 ? "ADMIN" : role;
+    const newUser = await user.create({
+      name,
+      email,
+      password,
+      role: effectiveRole,
+    });
     return Response.json(newUser, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

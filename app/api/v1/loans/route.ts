@@ -16,7 +16,14 @@ export async function GET(request: NextRequest) {
 
     const result = await loan.findAll({ page, limit });
     return Response.json(result);
-  } catch {
+  } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
+    }
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },

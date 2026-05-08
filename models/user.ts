@@ -49,11 +49,14 @@ async function create(data: {
   name: unknown;
   email: unknown;
   password: unknown;
+  role?: "ADMIN" | "USER";
 }): Promise<PublicUser> {
   const name = validateName(data.name);
   const email = validateEmail(data.email);
   const password = validateNewPassword(data.password);
   const hashedPassword = await bcrypt.hash(password, 10);
+  const role: "ADMIN" | "USER" =
+    data.role === "ADMIN" || data.role === "USER" ? data.role : "USER";
 
   const result = await database.query({
     text: `
@@ -61,7 +64,7 @@ async function create(data: {
       VALUES ($1, $2, $3, $4)
       RETURNING id, name, email, role, created_at
     `,
-    values: [name, email, hashedPassword, "ADMIN"],
+    values: [name, email, hashedPassword, role],
   });
   return result.rows[0];
 }
