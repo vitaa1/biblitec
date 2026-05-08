@@ -4,4 +4,3 @@ declare module "*.css" {
 }
 
 export {};
-
