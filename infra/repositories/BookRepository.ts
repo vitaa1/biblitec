@@ -135,22 +135,33 @@ export class BookRepository {
   }
 
   async delete(id: string): Promise<Book> {
-    const { rows: activeLoans } = await database.query({
-      text: "SELECT 1 FROM loans WHERE book_id = $1 AND returned_at IS NULL LIMIT 1",
+    const { rows } = await database.query({
+      text: `
+        UPDATE books
+        SET deleted_at = NOW()
+        WHERE id = $1
+          AND deleted_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM loans
+            WHERE book_id = $1 AND returned_at IS NULL
+          )
+        RETURNING ${BOOK_COLUMNS}
+      `,
       values: [id],
     });
-    if (activeLoans.length > 0) {
+
+    if (!rows[0]) {
+      const { rows: found } = await database.query({
+        text: "SELECT 1 FROM books WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
+        values: [id],
+      });
+      if (!found.length) throw new AppError("Livro não encontrado.", 404);
       throw new AppError(
         "Livro possui empréstimos em aberto e não pode ser removido.",
         409,
       );
     }
 
-    const { rows } = await database.query({
-      text: `UPDATE books SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING ${BOOK_COLUMNS}`,
-      values: [id],
-    });
-    if (!rows[0]) throw new AppError("Livro não encontrado.", 404);
     return rows[0];
   }
 }
