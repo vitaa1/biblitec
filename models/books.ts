@@ -122,8 +122,6 @@ async function update(
 }
 
 async function remove(id: string): Promise<Book> {
-  const existing = await repository.findById(id);
-  if (!existing) throw new AppError("Livro não encontrado.", 404);
   return repository.delete(id);
 }
 

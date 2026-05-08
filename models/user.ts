@@ -55,12 +55,8 @@ async function create(data: {
   const email = validateEmail(data.email);
   const password = validateNewPassword(data.password);
   const hashedPassword = await bcrypt.hash(password, 10);
-  const VALID_ROLES = ["ADMIN", "USER"] as const;
-  const role: "ADMIN" | "USER" = VALID_ROLES.includes(
-    data.role as "ADMIN" | "USER",
-  )
-    ? (data.role as "ADMIN" | "USER")
-    : "USER";
+  const role: "ADMIN" | "USER" =
+    data.role === "ADMIN" || data.role === "USER" ? data.role : "USER";
 
   const result = await database.query({
     text: `

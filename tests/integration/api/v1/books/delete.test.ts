@@ -2,7 +2,9 @@ import database from "infra/database";
 
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE books, users CASCADE;" });
+  await database.query({
+    text: "TRUNCATE TABLE loans, books, students, users CASCADE;",
+  });
 }
 
 async function createUserAndLogin(): Promise<string> {
@@ -39,6 +41,17 @@ async function createBook(cookie: string) {
       quantity: 3,
     }),
   });
+  if (!res.ok) throw new Error(`Falha ao criar livro: ${res.status}`);
+  return res.json();
+}
+
+async function createStudent(cookie: string) {
+  const res = await fetch("http://localhost:3000/api/v1/students", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify({ name: "Ana Lúcia", registration: "20240001" }),
+  });
+  if (!res.ok) throw new Error(`Falha ao criar aluno: ${res.status}`);
   return res.json();
 }
 
@@ -85,4 +98,29 @@ test("DELETE /api/v1/books/:id already deleted should return 404", async () => {
   );
 
   expect(response.status).toBe(404);
+});
+
+test("DELETE /api/v1/books/:id with active loan should return 409", async () => {
+  const cookie = await createUserAndLogin();
+  const book = await createBook(cookie);
+  const student = await createStudent(cookie);
+
+  await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify({
+      book_id: book.id,
+      student_id: student.id,
+      due_days: 14,
+    }),
+  });
+
+  const response = await fetch(
+    `http://localhost:3000/api/v1/books/${book.id}`,
+    { method: "DELETE", headers: { Cookie: cookie } },
+  );
+
+  expect(response.status).toBe(409);
+  const body = await response.json();
+  expect(body.error).toMatch(/empréstimos em aberto/);
 });
