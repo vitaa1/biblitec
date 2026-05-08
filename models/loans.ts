@@ -18,7 +18,7 @@ async function borrow(
   createdByUserId: string,
   studentId: string,
   bookId: string,
-  dueDays: number | string,
+  dueDays: unknown,
 ): Promise<Loan> {
   if (!createdByUserId || !studentId || !bookId) {
     throw new AppError(
@@ -27,7 +27,7 @@ async function borrow(
     );
   }
 
-  const days = Number.parseInt(String(dueDays), 10);
+  const days = Number.parseInt(String(dueDays ?? ""), 10);
   if (!Number.isInteger(days) || days <= 0 || days > 60) {
     throw new AppError(
       "due_days é obrigatório e deve ser um número entre 1 e 60.",
