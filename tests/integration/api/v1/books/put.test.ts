@@ -3,7 +3,7 @@ import database from "infra/database";
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
   await database.query({
-    text: "TRUNCATE TABLE loans, books, students, users CASCADE;",
+    text: "TRUNCATE TABLE emprestimos, livros, leitores, usuarios CASCADE;",
   });
 }
 
@@ -12,9 +12,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -33,13 +33,13 @@ async function createStudent(cookie: string): Promise<string> {
   const res = await fetch("http://localhost:3000/api/v1/students", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ name: "Aluno Teste", registration: "MAT-001" }),
+    body: JSON.stringify({ nome: "Aluno Teste", matricula: "MAT-001" }),
   });
   const body = await res.json();
   return body.id;
 }
 
-test("PUT /api/v1/books/:id should recalculate available_quantity when quantity changes", async () => {
+test("PUT /api/v1/books/:id should recalculate quantidade_disponivel when quantidade changes", async () => {
   const cookie = await createUserAndLogin();
   const studentId = await createStudent(cookie);
 
@@ -47,11 +47,11 @@ test("PUT /api/v1/books/:id should recalculate available_quantity when quantity 
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Clean Code",
-      author: "Robert Martin",
+      titulo: "Clean Code",
+      autor: "Robert Martin",
       isbn: "978-0132350884",
-      year: 2008,
-      quantity: 3,
+      ano: 2008,
+      quantidade: 3,
     }),
   });
   const createdBook = await createResponse.json();
@@ -60,9 +60,9 @@ test("PUT /api/v1/books/:id should recalculate available_quantity when quantity 
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      student_id: studentId,
-      book_id: createdBook.id,
-      due_days: 7,
+      leitor_id: studentId,
+      livro_id: createdBook.id,
+      dias_prazo: 7,
     }),
   });
 
@@ -71,13 +71,13 @@ test("PUT /api/v1/books/:id should recalculate available_quantity when quantity 
     {
       method: "PUT",
       headers: { "Content-Type": "application/json", Cookie: cookie },
-      body: JSON.stringify({ quantity: 5 }),
+      body: JSON.stringify({ quantidade: 5 }),
     },
   );
 
   expect(updateResponse.status).toBe(200);
 
   const updatedBook = await updateResponse.json();
-  expect(updatedBook.quantity).toBe(5);
-  expect(updatedBook.available_quantity).toBe(4);
+  expect(updatedBook.quantidade).toBe(5);
+  expect(updatedBook.quantidade_disponivel).toBe(4);
 });

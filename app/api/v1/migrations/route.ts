@@ -1,56 +1,34 @@
-import database from "infra/database";
-import migrationRunner from "node-pg-migrate";
+import { db } from "db";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { join } from "node:path";
+import { sql } from "drizzle-orm";
 
-const migrationOptions = {
-  databaseUrl: process.env.DATABASE_URL as string,
-  dryRun: true,
-  dir: join("infra", "migrations"),
-  direction: "up" as const,
-  verbose: true,
-  migrationsTable: "pgmigrations",
-};
+const migrationsFolder = join(process.cwd(), "db", "migrations");
 
 export async function GET() {
-  let dbClient;
   try {
-    dbClient = await database.getNewClient();
-    const pendingMigrations = await migrationRunner({
-      ...migrationOptions,
-      dbClient,
-    });
-    return Response.json(pendingMigrations);
+    const result = await db.execute(
+      sql`SELECT id, hash, created_at FROM __drizzle_migrations ORDER BY created_at ASC`,
+    );
+    return Response.json(result.rows);
   } catch (error) {
     console.error(error);
     return Response.json(
-      { error: "Erro interno do servidor." },
+      { error: "Erro ao listar migrations." },
       { status: 500 },
     );
-  } finally {
-    if (dbClient) await dbClient.end();
   }
 }
 
 export async function POST() {
-  let dbClient;
   try {
-    dbClient = await database.getNewClient();
-    const migratedMigrations = await migrationRunner({
-      ...migrationOptions,
-      dbClient,
-      dryRun: false,
-    });
-
-    return Response.json(migratedMigrations, {
-      status: migratedMigrations.length > 0 ? 201 : 200,
-    });
+    await migrate(db, { migrationsFolder });
+    return Response.json({ message: "Migrations aplicadas com sucesso." });
   } catch (error) {
     console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },
     );
-  } finally {
-    if (dbClient) await dbClient.end();
   }
 }

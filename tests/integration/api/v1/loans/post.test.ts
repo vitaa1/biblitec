@@ -3,7 +3,7 @@ import database from "infra/database";
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
   await database.query({
-    text: "TRUNCATE TABLE loans, books, students, users CASCADE;",
+    text: "TRUNCATE TABLE emprestimos, livros, leitores, usuarios CASCADE;",
   });
 }
 
@@ -12,9 +12,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -34,11 +34,11 @@ async function createBook(cookie: string): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Clean Code",
-      author: "Robert Martin",
+      titulo: "Clean Code",
+      autor: "Robert Martin",
       isbn: "978-0132350884",
-      year: 2008,
-      quantity: 2,
+      ano: 2008,
+      quantidade: 2,
     }),
   });
   const body = await res.json();
@@ -49,7 +49,7 @@ async function createStudent(cookie: string): Promise<string> {
   const res = await fetch("http://localhost:3000/api/v1/students", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ name: "Aluno Teste", registration: "MAT-001" }),
+    body: JSON.stringify({ nome: "Aluno Teste", matricula: "MAT-001" }),
   });
   const body = await res.json();
   return body.id;
@@ -64,26 +64,26 @@ test("POST /api/v1/loans should create loan and return 201", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      student_id: studentId,
-      book_id: bookId,
-      due_days: 14,
+      leitor_id: studentId,
+      livro_id: bookId,
+      dias_prazo: 14,
     }),
   });
 
   expect(response.status).toBe(201);
 
   const body = await response.json();
-  expect(body.book_id).toBe(bookId);
-  expect(body.student_id).toBe(studentId);
-  expect(body.returned_at).toBeNull();
-  expect(body.due_date).toBeDefined();
+  expect(body.livro_id).toBe(bookId);
+  expect(body.leitor_id).toBe(studentId);
+  expect(body.devolvido_em).toBeNull();
+  expect(body.data_devolucao).toBeDefined();
 });
 
 test("POST /api/v1/loans without auth should return 401", async () => {
   const response = await fetch("http://localhost:3000/api/v1/loans", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ student_id: "1", book_id: "1", due_days: 7 }),
+    body: JSON.stringify({ leitor_id: "1", livro_id: "1", dias_prazo: 7 }),
   });
 
   expect(response.status).toBe(401);
@@ -97,11 +97,11 @@ test("POST /api/v1/loans with unavailable book should return 409", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Raro",
-      author: "Autor X",
+      titulo: "Raro",
+      autor: "Autor X",
       isbn: "9788575226325",
-      year: 2020,
-      quantity: 1,
+      ano: 2020,
+      quantidade: 1,
     }),
   });
   const { id: bookId } = await res.json();
@@ -110,9 +110,9 @@ test("POST /api/v1/loans with unavailable book should return 409", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      student_id: studentId,
-      book_id: bookId,
-      due_days: 7,
+      leitor_id: studentId,
+      livro_id: bookId,
+      dias_prazo: 7,
     }),
   });
 
@@ -120,9 +120,9 @@ test("POST /api/v1/loans with unavailable book should return 409", async () => {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      student_id: studentId,
-      book_id: bookId,
-      due_days: 7,
+      leitor_id: studentId,
+      livro_id: bookId,
+      dias_prazo: 7,
     }),
   });
 

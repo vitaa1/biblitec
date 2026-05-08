@@ -3,7 +3,7 @@ import database from "infra/database";
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
   await database.query({
-    text: "TRUNCATE TABLE loans, books, students, users CASCADE;",
+    text: "TRUNCATE TABLE emprestimos, livros, leitores, usuarios CASCADE;",
   });
 }
 
@@ -12,9 +12,9 @@ async function createUserAndLogin(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Test User",
+      nome: "Test User",
       email: "test@gmail.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -33,7 +33,7 @@ async function createStudent(cookie: string): Promise<string> {
   const res = await fetch("http://localhost:3000/api/v1/students", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ name: "Aluno Teste", registration: "MAT-001" }),
+    body: JSON.stringify({ nome: "Aluno Teste", matricula: "MAT-001" }),
   });
   const body = await res.json();
   return body.id;
@@ -44,11 +44,11 @@ async function createBook(cookie: string): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      title: "Clean Code",
-      author: "Robert Martin",
+      titulo: "Clean Code",
+      autor: "Robert Martin",
       isbn: "978-0132350884",
-      year: 2008,
-      quantity: 2,
+      ano: 2008,
+      quantidade: 2,
     }),
   });
   const body = await res.json();
@@ -64,9 +64,9 @@ test("PATCH /api/v1/loans/:id should return a loan and restore stock", async () 
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      student_id: studentId,
-      book_id: bookId,
-      due_days: 7,
+      leitor_id: studentId,
+      livro_id: bookId,
+      dias_prazo: 7,
     }),
   });
   const loanBody = await loanResponse.json();
@@ -79,12 +79,12 @@ test("PATCH /api/v1/loans/:id should return a loan and restore stock", async () 
   expect(response.status).toBe(200);
 
   const body = await response.json();
-  expect(body.returned_at).toBeDefined();
+  expect(body.devolvido_em).toBeDefined();
   expect(body.status).toBe("RETURNED");
 
   const bookResponse = await fetch(
     `http://localhost:3000/api/v1/books/${bookId}`,
   );
   const updatedBook = await bookResponse.json();
-  expect(updatedBook.available_quantity).toBe(2);
+  expect(updatedBook.quantidade_disponivel).toBe(2);
 });

@@ -10,28 +10,28 @@ function validateBookData(
   data: Record<string, unknown>,
   options: { partial?: boolean } = {},
 ): Partial<{
-  title: string;
-  author: string;
+  titulo: string;
+  autor: string;
   isbn: string;
-  year: number;
-  quantity: number;
+  ano: number;
+  quantidade: number;
 }> {
   const { partial = false } = options;
   const validated: ReturnType<typeof validateBookData> = {};
   const currentYear = new Date().getFullYear() + 1;
 
-  if (!partial || data.title !== undefined) {
-    if (typeof data.title !== "string" || data.title.trim().length < 2) {
+  if (!partial || data.titulo !== undefined) {
+    if (typeof data.titulo !== "string" || data.titulo.trim().length < 2) {
       throw new AppError("Título deve ter pelo menos 2 caracteres.", 400);
     }
-    validated.title = data.title.trim();
+    validated.titulo = data.titulo.trim();
   }
 
-  if (!partial || data.author !== undefined) {
-    if (typeof data.author !== "string" || data.author.trim().length < 2) {
+  if (!partial || data.autor !== undefined) {
+    if (typeof data.autor !== "string" || data.autor.trim().length < 2) {
       throw new AppError("Autor deve ter pelo menos 2 caracteres.", 400);
     }
-    validated.author = data.author.trim();
+    validated.autor = data.autor.trim();
   }
 
   if (!partial || data.isbn !== undefined) {
@@ -44,8 +44,8 @@ function validateBookData(
     validated.isbn = normalizedIsbn;
   }
 
-  if (!partial || data.year !== undefined) {
-    const parsedYear = Number.parseInt(String(data.year), 10);
+  if (!partial || data.ano !== undefined) {
+    const parsedYear = Number.parseInt(String(data.ano), 10);
     if (
       !Number.isInteger(parsedYear) ||
       parsedYear < 1000 ||
@@ -53,18 +53,18 @@ function validateBookData(
     ) {
       throw new AppError("Ano informado é inválido.", 400);
     }
-    validated.year = parsedYear;
+    validated.ano = parsedYear;
   }
 
-  if (!partial || data.quantity !== undefined) {
-    const parsedQuantity = Number.parseInt(String(data.quantity), 10);
+  if (!partial || data.quantidade !== undefined) {
+    const parsedQuantity = Number.parseInt(String(data.quantidade), 10);
     if (!Number.isInteger(parsedQuantity) || parsedQuantity <= 0) {
       throw new AppError(
         "Quantidade deve ser um número inteiro maior que zero.",
         400,
       );
     }
-    validated.quantity = parsedQuantity;
+    validated.quantidade = parsedQuantity;
   }
 
   return validated;

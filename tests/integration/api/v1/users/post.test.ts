@@ -2,7 +2,7 @@ import database from "infra/database";
 
 beforeEach(cleanDatabase);
 async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE users CASCADE;" });
+  await database.query({ text: "TRUNCATE TABLE usuarios CASCADE;" });
 }
 
 async function login(email: string, password: string): Promise<string> {
@@ -22,16 +22,16 @@ test("POST /api/v1/users should allow bootstrap of the first admin", async () =>
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Admin Inicial",
+      nome: "Admin Inicial",
       email: "admin@test.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
   expect(response.status).toBe(201);
 
   const body = await response.json();
-  expect(body.role).toBe("ADMIN");
+  expect(body.papel).toBe("ADMIN");
 });
 
 test("POST /api/v1/users should block public creation after bootstrap", async () => {
@@ -39,9 +39,9 @@ test("POST /api/v1/users should block public creation after bootstrap", async ()
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Admin Inicial",
+      nome: "Admin Inicial",
       email: "admin@test.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -49,9 +49,9 @@ test("POST /api/v1/users should block public creation after bootstrap", async ()
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Novo Usuario",
+      nome: "Novo Usuario",
       email: "novo@test.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -68,9 +68,9 @@ test("POST /api/v1/users should allow authenticated admin to create another user
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Admin Inicial",
+      nome: "Admin Inicial",
       email: "admin@test.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
@@ -80,14 +80,14 @@ test("POST /api/v1/users should allow authenticated admin to create another user
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
-      name: "Novo Admin",
+      nome: "Novo Admin",
       email: "novo@test.com",
-      password: "senha123",
+      senha: "senha123",
     }),
   });
 
   expect(response.status).toBe(201);
 
   const body = await response.json();
-  expect(body.name).toBe("Novo Admin");
+  expect(body.nome).toBe("Novo Admin");
 });

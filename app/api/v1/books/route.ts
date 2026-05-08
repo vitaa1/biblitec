@@ -1,4 +1,5 @@
 import { AppError } from "infra/errors";
+import { createBookSchema, parseBody } from "infra/schemas";
 import book from "models/books";
 
 export async function GET(request: Request) {
@@ -26,8 +27,12 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { title, author, isbn, year, quantity } = await request.json();
-    const newBook = await book.create({ title, author, isbn, year, quantity });
+    const body = await request.json();
+    const parsed = parseBody(createBookSchema, body);
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error }, { status: 400 });
+    }
+    const newBook = await book.create(parsed.data);
     return Response.json(newBook, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {

@@ -3,17 +3,17 @@ import { AppError } from "infra/errors";
 
 export interface Book {
   id: string;
-  title: string;
-  author: string;
+  titulo: string;
+  autor: string;
   isbn: string;
-  year: number | null;
-  quantity: number;
-  available_quantity: number;
-  created_at: string;
+  ano: number | null;
+  quantidade: number;
+  quantidade_disponivel: number;
+  criado_em: string;
 }
 
 const BOOK_COLUMNS =
-  "id, title, author, isbn, year, quantity, available_quantity, created_at";
+  "id, titulo, autor, isbn, ano, quantidade, quantidade_disponivel, criado_em";
 
 export class BookRepository {
   async findAll({
@@ -28,12 +28,12 @@ export class BookRepository {
     const { rows } = await database.query({
       text: `
         SELECT ${BOOK_COLUMNS}
-        FROM books
-        WHERE deleted_at IS NULL
-          AND ($1 = '' OR title ILIKE '%' || $1 || '%'
-                       OR author ILIKE '%' || $1 || '%'
+        FROM livros
+        WHERE deletado_em IS NULL
+          AND ($1 = '' OR titulo ILIKE '%' || $1 || '%'
+                       OR autor ILIKE '%' || $1 || '%'
                        OR isbn ILIKE '%' || $1 || '%')
-        ORDER BY title ASC
+        ORDER BY titulo ASC
         LIMIT $2 OFFSET $3
       `,
       values: [search, limit, offset],
@@ -43,7 +43,7 @@ export class BookRepository {
 
   async findById(id: string): Promise<Book | null> {
     const { rows } = await database.query({
-      text: `SELECT ${BOOK_COLUMNS} FROM books WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
+      text: `SELECT ${BOOK_COLUMNS} FROM livros WHERE id = $1 AND deletado_em IS NULL LIMIT 1`,
       values: [id],
     });
     return rows[0] ?? null;
@@ -51,31 +51,31 @@ export class BookRepository {
 
   async findByIsbn(isbn: string): Promise<Book | null> {
     const { rows } = await database.query({
-      text: `SELECT ${BOOK_COLUMNS} FROM books WHERE isbn = $1 AND deleted_at IS NULL LIMIT 1`,
+      text: `SELECT ${BOOK_COLUMNS} FROM livros WHERE isbn = $1 AND deletado_em IS NULL LIMIT 1`,
       values: [isbn],
     });
     return rows[0] ?? null;
   }
 
   async create(data: {
-    title: string;
-    author: string;
+    titulo: string;
+    autor: string;
     isbn: string;
-    year?: number | null;
-    quantity: number;
+    ano?: number | null;
+    quantidade: number;
   }): Promise<Book> {
     const { rows } = await database.query({
       text: `
-        INSERT INTO books (title, author, isbn, year, quantity, available_quantity)
+        INSERT INTO livros (titulo, autor, isbn, ano, quantidade, quantidade_disponivel)
         VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING ${BOOK_COLUMNS}
       `,
       values: [
-        data.title,
-        data.author,
+        data.titulo,
+        data.autor,
         data.isbn,
-        data.year ?? null,
-        data.quantity,
+        data.ano ?? null,
+        data.quantidade,
       ],
     });
     return rows[0];
@@ -84,37 +84,39 @@ export class BookRepository {
   async update(
     id: string,
     data: Partial<{
-      title: string;
-      author: string;
+      titulo: string;
+      autor: string;
       isbn: string;
-      year: number;
-      quantity: number;
-      available_quantity: number;
+      ano: number;
+      quantidade: number;
+      quantidade_disponivel: number;
     }>,
   ): Promise<Book> {
     const currentBook = await this.findById(id);
     if (!currentBook) throw new AppError("Livro não encontrado.", 404);
 
-    if (data.quantity !== undefined) {
+    if (data.quantidade !== undefined) {
       const borrowedQuantity =
-        currentBook.quantity - currentBook.available_quantity;
-      if (data.quantity < borrowedQuantity) {
+        currentBook.quantidade - currentBook.quantidade_disponivel;
+      if (data.quantidade < borrowedQuantity) {
         throw new AppError(
           "Quantidade não pode ser menor que o número de livros emprestados.",
           409,
         );
       }
-      const newAvailable = data.quantity - borrowedQuantity;
-      data = { ...data, available_quantity: newAvailable };
+      data = {
+        ...data,
+        quantidade_disponivel: data.quantidade - borrowedQuantity,
+      };
     }
 
     const fields = [
-      "title",
-      "author",
+      "titulo",
+      "autor",
       "isbn",
-      "year",
-      "quantity",
-      "available_quantity",
+      "ano",
+      "quantidade",
+      "quantidade_disponivel",
     ] as const;
     const updates: string[] = [];
     const values: unknown[] = [];
@@ -128,7 +130,7 @@ export class BookRepository {
 
     values.push(id);
     const { rows } = await database.query({
-      text: `UPDATE books SET ${updates.join(", ")} WHERE id = $${values.length} AND deleted_at IS NULL RETURNING ${BOOK_COLUMNS}`,
+      text: `UPDATE livros SET ${updates.join(", ")} WHERE id = $${values.length} AND deletado_em IS NULL RETURNING ${BOOK_COLUMNS}`,
       values,
     });
     return rows[0];
@@ -137,13 +139,13 @@ export class BookRepository {
   async delete(id: string): Promise<Book> {
     const { rows } = await database.query({
       text: `
-        UPDATE books
-        SET deleted_at = NOW()
+        UPDATE livros
+        SET deletado_em = NOW()
         WHERE id = $1
-          AND deleted_at IS NULL
+          AND deletado_em IS NULL
           AND NOT EXISTS (
-            SELECT 1 FROM loans
-            WHERE book_id = $1 AND returned_at IS NULL
+            SELECT 1 FROM emprestimos
+            WHERE livro_id = $1 AND devolvido_em IS NULL
           )
         RETURNING ${BOOK_COLUMNS}
       `,
@@ -152,7 +154,7 @@ export class BookRepository {
 
     if (!rows[0]) {
       const { rows: found } = await database.query({
-        text: "SELECT 1 FROM books WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
+        text: "SELECT 1 FROM livros WHERE id = $1 AND deletado_em IS NULL LIMIT 1",
         values: [id],
       });
       if (!found.length) throw new AppError("Livro não encontrado.", 404);
