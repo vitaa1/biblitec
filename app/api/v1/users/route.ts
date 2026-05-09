@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { env } from "lib/env";
 import { AppError } from "infra/errors";
 import { createUserSchema, parseBody } from "infra/schemas";
 import user from "models/user";
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
       let decodedToken: { papel: string };
       try {
-        decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as {
+        decodedToken = jwt.verify(token, env.JWT_SECRET) as {
           papel: string;
         };
       } catch {

@@ -1,8 +1,9 @@
 import database from "infra/database";
+import { env } from "lib/env";
 
 export async function GET() {
   const updatedAt = new Date().toISOString();
-  const databaseName = process.env.POSTGRES_DB;
+  const databaseName = env.POSTGRES_DB;
 
   const client = await database.getNewClient();
 
