@@ -174,7 +174,8 @@ npm run lint:check && npm run typecheck && npm test
 2. `git checkout -b feat/issue-NNN-descricao`
 3. Commits atômicos com Conventional Commits em português (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
 4. PR draft cedo, "ready" quando funcional + testes passando.
-5. Merge após CI verde (`linting.yml` + `tests.yml`).
+5. Após completar a implementação, antes de propor merge ou PR, invoque o agente `code-reviewer` definido em `AGENTS.md` passando os arquivos modificados como contexto.
+6. Merge após CI verde (`linting.yml` + `tests.yml`).
 
 PR description foca em **problema + solução**, não em código (o diff já mostra). Template e detalhes em [`docs/workflow.md`](./docs/workflow.md).
 
