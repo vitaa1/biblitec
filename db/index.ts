@@ -1,15 +1,16 @@
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { env } from "lib/env";
 import * as schema from "./schema";
 
 function getSsl(): boolean | { ca: string } | undefined {
-  if (process.env.POSTGRES_CA) return { ca: process.env.POSTGRES_CA };
-  if (process.env.NODE_ENV === "production") return true;
+  if (env.POSTGRES_CA) return { ca: env.POSTGRES_CA };
+  if (env.NODE_ENV === "production") return true;
   return undefined;
 }
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: env.DATABASE_URL,
   ssl: getSsl(),
 });
 
