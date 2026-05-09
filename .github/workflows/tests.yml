@@ -25,7 +25,8 @@ jobs:
     env:
       DATABASE_URL: postgres://local_user:local_password@localhost:5432/local_db
       POSTGRES_DB: local_db
-      JWT_SECRET: ci-secret-for-tests
+      JWT_SECRET: ci-secret-apenas-para-testes-nao-usar-em-producao
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,4 +39,5 @@ jobs:
           echo "DATABASE_URL=$DATABASE_URL" >> .env.development
           echo "POSTGRES_DB=$POSTGRES_DB" >> .env.development
           echo "JWT_SECRET=$JWT_SECRET" >> .env.development
+          echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.development
       - run: npm test

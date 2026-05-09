@@ -11,4 +11,12 @@ const schema = z.object({
   POSTGRES_CA: z.string().optional(),
 });
 
-export const env = schema.parse(process.env);
+const result = schema.safeParse(process.env);
+if (!result.success) {
+  const variaveis = result.error.issues.map((i) => i.path[0]).join(", ");
+  throw new Error(
+    `Variáveis de ambiente inválidas ou ausentes: ${variaveis}. Verifique o arquivo .env.`,
+  );
+}
+
+export const env = result.data;
