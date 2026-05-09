@@ -1,5 +1,6 @@
 import { jwtVerify } from "jose";
 import { type NextRequest, NextResponse } from "next/server";
+import { env } from "lib/env";
 
 type RouteContext = { pathname: string; method: string };
 
@@ -42,7 +43,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     const decoded = payload as { id: string; papel: string };
 
