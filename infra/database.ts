@@ -1,4 +1,5 @@
 import { Client, type QueryConfig, type QueryResult } from "pg";
+import { env } from "lib/env";
 
 async function query(queryObject: QueryConfig): Promise<QueryResult> {
   let client: Client | undefined;
@@ -15,7 +16,7 @@ async function query(queryObject: QueryConfig): Promise<QueryResult> {
 
 async function getNewClient(): Promise<Client> {
   const client = new Client({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: env.DATABASE_URL,
     ssl: getSslValues(),
   });
   await client.connect();
@@ -23,10 +24,10 @@ async function getNewClient(): Promise<Client> {
 }
 
 function getSslValues(): boolean | { ca: string } {
-  if (process.env.POSTGRES_CA) {
-    return { ca: process.env.POSTGRES_CA };
+  if (env.POSTGRES_CA) {
+    return { ca: env.POSTGRES_CA };
   }
-  return process.env.NODE_ENV === "production";
+  return env.NODE_ENV === "production";
 }
 
 const database = { query, getNewClient };
