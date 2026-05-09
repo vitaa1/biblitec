@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { env } from "lib/env";
 import user from "models/user";
 import { NextResponse } from "next/server";
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
         email: existingUser.email,
         papel: existingUser.papel,
       },
-      process.env.JWT_SECRET as string,
+      env.JWT_SECRET,
       { expiresIn: "1d" },
     );
 
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: 86400,
       sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
     });
 
     return response;
