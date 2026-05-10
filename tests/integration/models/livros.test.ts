@@ -104,3 +104,20 @@ test("atualizar() ISBN duplicado lança AppError 409", async () => {
     atualizar(l1.id, { isbn: "2222222222222" }, ctxAdmin),
   ).rejects.toMatchObject({ status_code: 409 });
 });
+
+test("atualizar() gestor não pode editar livro local de outra giroteca", async () => {
+  const outraGiroteca = await criarGiroteca();
+  const outroGestor = await criarUsuario({
+    papel: "gestor_giroteca",
+    girotecaId: outraGiroteca.id,
+  });
+  const ctxOutro: Contexto = {
+    usuarioId: outroGestor.id,
+    papel: "gestor_giroteca",
+    girotecaId: outraGiroteca.id,
+  };
+  const livro = await criar({ titulo: "Local de A", autores: "Autor" }, ctxGestor);
+  await expect(
+    atualizar(livro.id, { titulo: "Hackeado" }, ctxOutro),
+  ).rejects.toMatchObject({ status_code: 403 });
+});

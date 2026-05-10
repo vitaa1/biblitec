@@ -93,10 +93,10 @@ export async function atualizar(
   if (!existente) throw new AppError("Livro não encontrado.", 404);
 
   if (contexto.papel === "gestor_giroteca") {
-    if (
-      existente.origem === "central" ||
-      existente.criadoPorGirotecaId !== contexto.girotecaId
-    ) {
+    if (existente.origem === "central") {
+      throw new AppError("Não autorizado.", 403);
+    }
+    if (existente.criadoPorGirotecaId !== contexto.girotecaId) {
       throw new AppError("Não autorizado.", 403);
     }
   }
