@@ -10,34 +10,26 @@ const publicRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
   ({ pathname, method }) =>
     pathname === "/api/v1/auth/logout" && method === "POST",
   ({ pathname, method }) => pathname === "/api/v1/status" && method === "GET",
-  ({ pathname, method }) => pathname === "/api/v1/users" && method === "POST",
+  ({ pathname, method }) =>
+    pathname.startsWith("/api/v1/books") && method === "GET",
 ];
 
+// Rotas que exigem papel admin_nthe (verificado no middleware além do model)
 const adminRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
-  ({ pathname }) => pathname === "/api/v1/migrations",
-  ({ pathname, method }) =>
-    pathname.startsWith("/api/v1/books") &&
-    ["POST", "PUT", "DELETE"].includes(method),
-  ({ pathname }) => pathname.startsWith("/api/v1/students"),
-  ({ pathname }) => pathname.startsWith("/api/v1/loans"),
+  ({ pathname }) => pathname.startsWith("/api/v1/migrations"),
+  ({ pathname, method }) => pathname === "/api/v1/users" && method === "POST",
 ];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const { method } = request;
+  const method = request.method;
 
-  const isPublicBookReadRoute =
-    pathname.startsWith("/api/v1/books") && method === "GET";
-  const isPublicRoute = publicRouteMatchers.some((matcher) =>
-    matcher({ pathname, method }),
+  const isPublicRoute = publicRouteMatchers.some((m) =>
+    m({ pathname, method }),
   );
-
-  if (isPublicRoute || isPublicBookReadRoute) {
-    return NextResponse.next();
-  }
+  if (isPublicRoute) return NextResponse.next();
 
   const token = request.cookies.get("token")?.value;
-
   if (!token) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
@@ -45,19 +37,23 @@ export async function middleware(request: NextRequest) {
   try {
     const secret = new TextEncoder().encode(env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    const decoded = payload as { id: string; papel: string };
+    const decoded = payload as {
+      id: string;
+      papel: "admin_nthe" | "gestor_giroteca";
+      girotecaId: string | null;
+    };
 
-    const isAdminRoute = adminRouteMatchers.some((matcher) =>
-      matcher({ pathname, method }),
+    const isAdminRoute = adminRouteMatchers.some((m) =>
+      m({ pathname, method }),
     );
-
-    if (isAdminRoute && decoded.papel !== "ADMIN") {
+    if (isAdminRoute && decoded.papel !== "admin_nthe") {
       return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
     }
 
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-user-id", decoded.id);
-    requestHeaders.set("x-user-role", decoded.papel);
+    requestHeaders.set("x-user-papel", decoded.papel);
+    requestHeaders.set("x-user-giroteca-id", decoded.girotecaId ?? "");
 
     return NextResponse.next({ request: { headers: requestHeaders } });
   } catch {
