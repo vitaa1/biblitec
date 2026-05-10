@@ -1,6 +1,6 @@
 # Biblitec
 
-Sistema de gestão das girotecas da Prefeitura Municipal de Teresina, desenvolvido pelo Núcleo de Tecnologia Educacional (NTE) como parte do projeto **Giratech**.
+Sistema de gestão das girotecas da Prefeitura Municipal de Teresina, desenvolvido pelo Núcleo de Tecnologia Educacional (NTHE) como parte do projeto **Giratech**.
 
 ## Stack
 

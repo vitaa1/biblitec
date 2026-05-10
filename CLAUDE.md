@@ -45,7 +45,8 @@ Decisões de produto importantes (livro perdido, danificado, sem internet, etc.)
 ## 4. Stack
 
 - **Next.js 15** (App Router) + **TypeScript** estrito + **React 19**
-- **PostgreSQL 16** + **node-pg-migrate** (migrations) + **pg** (queries raw SQL)
+- **PostgreSQL 16** + **Drizzle ORM** + **pg** (driver) — `drizzle-kit` gerencia migrations
+- **Tailwind CSS v4** + **shadcn/ui** (Radix UI) + **React Hook Form** + **Zod**
 - **JWT** via cookie httpOnly — assinado com `jsonwebtoken`, verificado no middleware com `jose`
 - **bcryptjs** para hash de senhas
 - **Jest** + fetch nativo para testes de integração
@@ -60,12 +61,16 @@ Não troque nada disso sem abrir issue para discutir. Justificativas e alternati
 
 ```
 biblitec/
-├── app/                   # API routes (App Router)
+├── app/                   # API routes e Server Actions (App Router)
+├── db/
+│   ├── index.ts           # cliente Drizzle (export db)
+│   ├── schema.ts          # definição das tabelas
+│   ├── migrations/        # arquivos gerados pelo drizzle-kit
+│   └── seed.ts            # dados iniciais
 ├── infra/
-│   ├── database.ts        # cliente pg (query, getNewClient)
+│   ├── database.ts        # utilitários de conexão pg
 │   ├── errors.ts          # AppError
-│   ├── migrations/        # arquivos node-pg-migrate
-│   ├── repositories/      # acesso direto ao banco
+│   ├── repositories/      # acesso direto ao banco via Drizzle
 │   └── scripts/           # utilitários de infra (wait-for-postgres)
 ├── models/                # ⚠ camada de domínio
 ├── tests/
@@ -152,8 +157,10 @@ Convenções completas (naming, datas, commits, filosofia de código) em [`docs/
 
 ```bash
 npm run dev                  # sobe Postgres + Next dev
-npm run migration:create     # cria novo arquivo de migration
-npm run migration:up         # aplica migrations pendentes
+npm run db:generate          # gera migration a partir do schema
+npm run db:migrate           # aplica migrations pendentes
+npm run db:studio            # abre Drizzle Studio (inspetor visual)
+npm run db:seed              # popula banco com dados iniciais
 npm run lint:check           # Prettier + ESLint (somente leitura)
 npm run lint:fix             # Prettier + ESLint --fix
 npm run typecheck            # tsc --noEmit

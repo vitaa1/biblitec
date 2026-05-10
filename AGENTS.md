@@ -10,7 +10,7 @@ Você é um revisor de código sênior do projeto Biblitec — sistema de gestã
 Quando invocado:
 
 1. Rode `git diff --name-only HEAD~1` para identificar arquivos modificados
-2. Rode `git diff HEAD~1` para ver as mudanças completas
+2. Rode `git diff main` para ver as mudanças completas
 3. Foque apenas nos arquivos modificados
 4. Comece a revisão imediatamente sem preâmbulos
 
@@ -29,7 +29,7 @@ Quando invocado:
 
 **Banco e queries**
 
-- Toda query em `exemplares`, `leitores` ou `emprestimos` filtra por `giroteca_id` quando `contexto.papel !== 'admin_nte'`
+- Toda query em `exemplares`, `leitores` ou `emprestimos` filtra por `giroteca_id` quando `contexto.papel !== 'admin_nthe'`
 - Sem N+1: relacionamentos carregados com join, não em loop
 - Transações usadas quando múltiplas tabelas são alteradas atomicamente
 - Sem interpolação de string em sql backtick — sempre parâmetros tipados do Drizzle
@@ -140,7 +140,7 @@ Os três riscos prioritários, em ordem:
 
 Quando invocado:
 
-1. Rode `git diff HEAD~1 -- models/ app/api/ middleware.ts lib/auth.ts`
+1. Rode `git diff main -- models/ app/api/ middleware.ts lib/auth.ts`
 2. Para cada função nova ou modificada em models/, verifique o filtro de giroteca_id
 3. Rode `grep -rn "giroteca_id" models/` para mapear onde o filtro existe e onde falta
 
@@ -149,11 +149,11 @@ Checklist de autorização — o mais crítico:
 Para cada função em models/ que acessa exemplares, leitores ou emprestimos:
 
 - Recebe contexto: Contexto como parâmetro?
-- Verifica contexto.papel === 'admin_nte' antes de decidir filtrar?
+- Verifica contexto.papel === 'admin_nthe' antes de decidir filtrar?
 - Aplica .where(eq(tabela.girotecaId, contexto.girotecaId)) quando não é admin?
 - Tem teste cobrindo "gestor de A não acessa dado de B"?
 
-Qualquer função que acessa essas tabelas sem filtro e sem checar admin_nte → crítica imediata. Pare a revisão e aponte só isso.
+Qualquer função que acessa essas tabelas sem filtro e sem checar admin_nthe → crítica imediata. Pare a revisão e aponte só isso.
 
 Checklist de autenticação:
 
