@@ -1,19 +1,35 @@
 import { db } from "./index";
-import { livros, leitores, usuarios } from "./schema";
+import { girotecas, livros, leitores, usuarios } from "./schema";
 import bcrypt from "bcryptjs";
 
+// Seed provisório — será reescrito na issue de seed da Milestone 2
 async function seed() {
   console.log("Populando banco de dados...");
 
-  const passwordHash = await bcrypt.hash("senha123", 10);
+  const senhaHash = await bcrypt.hash("senha123", 10);
+
+  const [giroteca] = await db
+    .insert(girotecas)
+    .values({
+      nome: "Giroteca Escola Modelo",
+      codigo: "GM001",
+      escolaVinculada: "Escola Estadual Modelo",
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (!giroteca) {
+    console.log("Giroteca já existe, pulando seed.");
+    process.exit(0);
+  }
 
   await db
     .insert(usuarios)
     .values({
-      email: "admin@biblitec.com.br",
-      senha: passwordHash,
-      nome: "Administrador",
-      papel: "ADMIN",
+      nome: "Administrador NTHE",
+      email: "admin@nthe.teresina.pi.gov.br",
+      senhaHash,
+      papel: "admin_nthe",
     })
     .onConflictDoNothing();
 
@@ -22,19 +38,17 @@ async function seed() {
     .values([
       {
         titulo: "Dom Casmurro",
-        autor: "Machado de Assis",
+        autores: "Machado de Assis",
         isbn: "9788535910663",
-        ano: 1899,
-        quantidade: 3,
-        quantidadeDisponivel: 3,
+        anoPublicacao: 1899,
+        origem: "central",
       },
       {
         titulo: "O Cortiço",
-        autor: "Aluísio Azevedo",
+        autores: "Aluísio Azevedo",
         isbn: "9788508177059",
-        ano: 1890,
-        quantidade: 2,
-        quantidadeDisponivel: 2,
+        anoPublicacao: 1890,
+        origem: "central",
       },
     ])
     .onConflictDoNothing();
@@ -42,8 +56,16 @@ async function seed() {
   await db
     .insert(leitores)
     .values([
-      { nome: "Ana Lúcia Silva", matricula: "2024001" },
-      { nome: "João Pedro Santos", matricula: "2024002" },
+      {
+        girotecaId: giroteca.id,
+        nome: "Ana Lúcia Silva",
+        matricula: "2024001",
+      },
+      {
+        girotecaId: giroteca.id,
+        nome: "João Pedro Santos",
+        matricula: "2024002",
+      },
     ])
     .onConflictDoNothing();
 
