@@ -22,14 +22,20 @@ beforeEach(async () => {
 });
 
 test("buscar() retorna todos os livros ativos", async () => {
-  await criar({ titulo: "Dom Casmurro", autores: "Machado de Assis" }, ctxAdmin);
+  await criar(
+    { titulo: "Dom Casmurro", autores: "Machado de Assis" },
+    ctxAdmin,
+  );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
   const resultado = await buscar();
   expect(resultado).toHaveLength(2);
 });
 
 test("buscar() filtra por busca textual no título", async () => {
-  await criar({ titulo: "Dom Casmurro", autores: "Machado de Assis" }, ctxAdmin);
+  await criar(
+    { titulo: "Dom Casmurro", autores: "Machado de Assis" },
+    ctxAdmin,
+  );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
   const resultado = await buscar({ busca: "Dom" });
   expect(resultado).toHaveLength(1);
@@ -93,12 +99,19 @@ test("atualizar() gestor não pode editar livro central", async () => {
 
 test("atualizar() gestor pode editar livro local próprio", async () => {
   const livro = await criar({ titulo: "Local", autores: "Eu" }, ctxGestor);
-  const atualizado = await atualizar(livro.id, { titulo: "Editado" }, ctxGestor);
+  const atualizado = await atualizar(
+    livro.id,
+    { titulo: "Editado" },
+    ctxGestor,
+  );
   expect(atualizado.titulo).toBe("Editado");
 });
 
 test("atualizar() ISBN duplicado lança AppError 409", async () => {
-  const l1 = await criar({ titulo: "L1", autores: "A", isbn: "1111111111111" }, ctxAdmin);
+  const l1 = await criar(
+    { titulo: "L1", autores: "A", isbn: "1111111111111" },
+    ctxAdmin,
+  );
   await criar({ titulo: "L2", autores: "B", isbn: "2222222222222" }, ctxAdmin);
   await expect(
     atualizar(l1.id, { isbn: "2222222222222" }, ctxAdmin),
@@ -116,7 +129,10 @@ test("atualizar() gestor não pode editar livro local de outra giroteca", async 
     papel: "gestor_giroteca",
     girotecaId: outraGiroteca.id,
   };
-  const livro = await criar({ titulo: "Local de A", autores: "Autor" }, ctxGestor);
+  const livro = await criar(
+    { titulo: "Local de A", autores: "Autor" },
+    ctxGestor,
+  );
   await expect(
     atualizar(livro.id, { titulo: "Hackeado" }, ctxOutro),
   ).rejects.toMatchObject({ status_code: 403 });

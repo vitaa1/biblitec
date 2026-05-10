@@ -35,9 +35,9 @@ test("autenticar() retorna usuário com credenciais corretas", async () => {
 
 test("autenticar() falha com senha errada", async () => {
   await criarUsuario({ email: "usuario@test.com", senha: "correta" });
-  await expect(
-    autenticar("usuario@test.com", "errada"),
-  ).rejects.toMatchObject({ status_code: 401 });
+  await expect(autenticar("usuario@test.com", "errada")).rejects.toMatchObject({
+    status_code: 401,
+  });
 });
 
 test("autenticar() falha com email inexistente", async () => {
@@ -108,7 +108,10 @@ test("criar() email duplicado lança AppError 409", async () => {
 });
 
 test("autenticar() falha com usuário inativo", async () => {
-  const u = await criarUsuario({ email: "inativo@test.com", senha: "senha123" });
+  const u = await criarUsuario({
+    email: "inativo@test.com",
+    senha: "senha123",
+  });
   // deactivate user directly in DB
   const { db } = await import("db/index");
   const { usuarios } = await import("db/schema");
@@ -126,7 +129,10 @@ test("autenticar() aceita email com uppercase", async () => {
 });
 
 test("criar() permite reutilizar email de usuário inativo", async () => {
-  const u1 = await criarUsuario({ email: "reutilizar@test.com", senha: "senha123" });
+  const u1 = await criarUsuario({
+    email: "reutilizar@test.com",
+    senha: "senha123",
+  });
   // deactivate user directly in DB
   const { db } = await import("db/index");
   const { usuarios } = await import("db/schema");

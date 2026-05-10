@@ -54,7 +54,10 @@ test("criar() cria empréstimo e muda exemplar para emprestado", async () => {
   expect(emprestimo.renovacoes).toBe(0);
 
   const { exemplares } = await import("db/schema");
-  const [ex] = await db.select().from(exemplares).where(eq(exemplares.id, exemplar.id));
+  const [ex] = await db
+    .select()
+    .from(exemplares)
+    .where(eq(exemplares.id, exemplar.id));
   expect(ex.status).toBe("emprestado");
 });
 
@@ -145,7 +148,10 @@ test("devolver() registra devolução e libera exemplar", async () => {
   expect(devolvido.dataDevolucao).not.toBeNull();
 
   const { exemplares } = await import("db/schema");
-  const [ex] = await db.select().from(exemplares).where(eq(exemplares.id, exemplar.id));
+  const [ex] = await db
+    .select()
+    .from(exemplares)
+    .where(eq(exemplares.id, exemplar.id));
   expect(ex.status).toBe("disponivel");
 });
 
@@ -160,9 +166,9 @@ test("renovar() estende prazo e incrementa renovacoes", async () => {
 
   const renovado = await renovar(emprestimo.id, ctxGestorA);
   expect(renovado.renovacoes).toBe(1);
-  expect(renovado.dataPrevistaDevolucao > emprestimo.dataPrevistaDevolucao).toBe(
-    true,
-  );
+  expect(
+    renovado.dataPrevistaDevolucao > emprestimo.dataPrevistaDevolucao,
+  ).toBe(true);
 });
 
 test("renovar() falha após 2 renovações", async () => {
@@ -211,7 +217,9 @@ test("listarEmAberto() gestor vê apenas empréstimos da própria giroteca", asy
   const exemplarB = await criarExemplar(livroB.id, girotecaB.id);
   const leitorB = await criarLeitor(girotecaB.id);
   const ctxGestorB: Contexto = {
-    usuarioId: (await criarUsuario({ papel: "gestor_giroteca", girotecaId: girotecaB.id })).id,
+    usuarioId: (
+      await criarUsuario({ papel: "gestor_giroteca", girotecaId: girotecaB.id })
+    ).id,
     papel: "gestor_giroteca",
     girotecaId: girotecaB.id,
   };

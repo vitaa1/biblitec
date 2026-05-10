@@ -42,7 +42,10 @@ export async function buscarPorTombamento(
   girotecaId: string,
   contexto: Contexto,
 ): Promise<Exemplar | null> {
-  if (contexto.papel === "gestor_giroteca" && girotecaId !== contexto.girotecaId) {
+  if (
+    contexto.papel === "gestor_giroteca" &&
+    girotecaId !== contexto.girotecaId
+  ) {
     throw new AppError("Não autorizado.", 403);
   }
 

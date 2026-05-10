@@ -46,7 +46,10 @@ test("buscar() admin vê leitores de todas as girotecas", async () => {
 
 test("buscar() filtra por nome", async () => {
   await criarLeitor(girotecaA.id, { nome: "Ana Silva" });
-  await criarLeitor(girotecaA.id, { nome: "Carlos Sousa", matricula: "MAT-999" });
+  await criarLeitor(girotecaA.id, {
+    nome: "Carlos Sousa",
+    matricula: "MAT-999",
+  });
   const lista = await buscar({ busca: "Ana" }, ctxGestorA);
   expect(lista).toHaveLength(1);
   expect(lista[0].nome).toBe("Ana Silva");

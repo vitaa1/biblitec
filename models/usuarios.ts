@@ -80,19 +80,14 @@ export async function listarPorGiroteca(
   girotecaId: string,
   contexto: Contexto,
 ): Promise<UsuarioPublico[]> {
-  if (
-    contexto.papel !== "admin_nthe" &&
-    contexto.girotecaId !== girotecaId
-  ) {
+  if (contexto.papel !== "admin_nthe" && contexto.girotecaId !== girotecaId) {
     throw new AppError("Não autorizado.", 403);
   }
 
   const rows = await db
     .select()
     .from(usuarios)
-    .where(
-      and(eq(usuarios.girotecaId, girotecaId), eq(usuarios.ativo, true)),
-    );
+    .where(and(eq(usuarios.girotecaId, girotecaId), eq(usuarios.ativo, true)));
 
   return rows.map(omitirSenha);
 }

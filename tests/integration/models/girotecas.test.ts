@@ -49,10 +49,7 @@ test("criar() admin cria nova giroteca", async () => {
 
 test("criar() gestor não pode criar giroteca", async () => {
   await expect(
-    criar(
-      { codigo: "X", nome: "X", escolaVinculada: "X" },
-      ctxGestor,
-    ),
+    criar({ codigo: "X", nome: "X", escolaVinculada: "X" }, ctxGestor),
   ).rejects.toMatchObject({ status_code: 403 });
 });
 

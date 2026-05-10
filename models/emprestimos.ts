@@ -193,7 +193,9 @@ export async function renovar(
   return updated;
 }
 
-export async function listarEmAberto(contexto: Contexto): Promise<Emprestimo[]> {
+export async function listarEmAberto(
+  contexto: Contexto,
+): Promise<Emprestimo[]> {
   if (contexto.papel === "admin_nthe") {
     return db
       .select()
