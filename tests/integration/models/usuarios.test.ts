@@ -30,7 +30,7 @@ test("autenticar() retorna usuário com credenciais corretas", async () => {
   });
   const resultado = await autenticar("usuario@test.com", "minha@senha");
   expect(resultado.id).toBe(u.id);
-  expect((resultado as any).senhaHash).toBeUndefined();
+  expect("senhaHash" in resultado).toBe(false);
 });
 
 test("autenticar() falha com senha errada", async () => {
@@ -59,7 +59,7 @@ test("criar() admin cria gestor vinculado à giroteca", async () => {
   );
   expect(novo.papel).toBe("gestor_giroteca");
   expect(novo.girotecaId).toBe(girotecaA.id);
-  expect((novo as any).senhaHash).toBeUndefined();
+  expect("senhaHash" in novo).toBe(false);
 });
 
 test("criar() gestor não pode criar usuários", async () => {
