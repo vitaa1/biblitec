@@ -1,0 +1,2 @@
+ALTER TABLE "usuarios" DROP CONSTRAINT "usuarios_email_unique";--> statement-breakpoint
+CREATE UNIQUE INDEX "usuarios_email_ativo_idx" ON "usuarios" USING btree ("email") WHERE "usuarios"."ativo" = true;
