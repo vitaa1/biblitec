@@ -13,6 +13,10 @@ export function contextoFromRequest(request: Request): Contexto {
     throw new AppError("Não autenticado.", 401);
   }
 
+  if (papel !== "admin_nthe" && papel !== "gestor_giroteca") {
+    throw new AppError("Não autenticado.", 401);
+  }
+
   return {
     usuarioId,
     papel,

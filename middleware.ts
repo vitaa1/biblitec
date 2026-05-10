@@ -4,6 +4,8 @@ import { env } from "lib/env";
 
 type RouteContext = { pathname: string; method: string };
 
+const secret = new TextEncoder().encode(env.JWT_SECRET);
+
 const publicRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
   ({ pathname, method }) =>
     pathname === "/api/v1/auth/login" && method === "POST",
@@ -35,13 +37,23 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const secret = new TextEncoder().encode(env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     const decoded = payload as {
       id: string;
       papel: "admin_nthe" | "gestor_giroteca";
       girotecaId: string | null;
     };
+
+    if (
+      typeof decoded.id !== "string" ||
+      !decoded.id ||
+      (decoded.papel !== "admin_nthe" && decoded.papel !== "gestor_giroteca")
+    ) {
+      return NextResponse.json(
+        { error: "Token inválido." },
+        { status: 401 },
+      );
+    }
 
     const isAdminRoute = adminRouteMatchers.some((m) =>
       m({ pathname, method }),
