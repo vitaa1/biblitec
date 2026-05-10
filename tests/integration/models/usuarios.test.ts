@@ -9,7 +9,7 @@ let ctxGestorA: Contexto;
 beforeEach(async () => {
   await limparBanco();
   girotecaA = await criarGiroteca({ codigo: "UA01", nome: "Giroteca A" });
-  const girotecaB = await criarGiroteca({ codigo: "UB01", nome: "Giroteca B" });
+  await criarGiroteca({ codigo: "UB01", nome: "Giroteca B" });
   const admin = await criarUsuario({ papel: "admin_nthe", girotecaId: null });
   const gestorA = await criarUsuario({
     papel: "gestor_giroteca",
@@ -105,6 +105,46 @@ test("criar() email duplicado lança AppError 409", async () => {
       ctxAdmin,
     ),
   ).rejects.toMatchObject({ status_code: 409 });
+});
+
+test("autenticar() falha com usuário inativo", async () => {
+  const u = await criarUsuario({ email: "inativo@test.com", senha: "senha123" });
+  // deactivate user directly in DB
+  const { db } = await import("db/index");
+  const { usuarios } = await import("db/schema");
+  const { eq } = await import("drizzle-orm");
+  await db.update(usuarios).set({ ativo: false }).where(eq(usuarios.id, u.id));
+  await expect(
+    autenticar("inativo@test.com", "senha123"),
+  ).rejects.toMatchObject({ status_code: 401 });
+});
+
+test("autenticar() aceita email com uppercase", async () => {
+  await criarUsuario({ email: "normal@test.com", senha: "senha123" });
+  const resultado = await autenticar("NORMAL@TEST.COM", "senha123");
+  expect(resultado.email).toBe("normal@test.com");
+});
+
+test("criar() permite reutilizar email de usuário inativo", async () => {
+  const u1 = await criarUsuario({ email: "reutilizar@test.com", senha: "senha123" });
+  // deactivate user directly in DB
+  const { db } = await import("db/index");
+  const { usuarios } = await import("db/schema");
+  const { eq } = await import("drizzle-orm");
+  await db.update(usuarios).set({ ativo: false }).where(eq(usuarios.id, u1.id));
+  // should allow creating new user with same email
+  const u2 = await criar(
+    {
+      nome: "Novo",
+      email: "reutilizar@test.com",
+      senha: "senha456",
+      papel: "gestor_giroteca",
+      girotecaId: girotecaA.id,
+    },
+    ctxAdmin,
+  );
+  expect(u2.email).toBe("reutilizar@test.com");
+  expect(u2.id).not.toBe(u1.id);
 });
 
 test("listarPorGiroteca() retorna usuários da giroteca", async () => {

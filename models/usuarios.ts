@@ -57,7 +57,7 @@ export async function criar(
   const [existente] = await db
     .select()
     .from(usuarios)
-    .where(eq(usuarios.email, email));
+    .where(and(eq(usuarios.email, email), eq(usuarios.ativo, true)));
   if (existente) throw new AppError("Email já cadastrado.", 409);
 
   const senhaHash = await bcrypt.hash(input.senha, 10);
