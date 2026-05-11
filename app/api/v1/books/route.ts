@@ -1,16 +1,14 @@
 import { AppError } from "infra/errors";
-import { createBookSchema, parseBody } from "infra/schemas";
-import book from "models/books";
+import { createLivroSchema, parseBody } from "infra/schemas";
+import { contextoFromRequest } from "lib/contexto";
+import { buscar, criar } from "models/livros";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const page = searchParams.get("page") ?? undefined;
-    const limit = searchParams.get("limit") ?? undefined;
-    const search = searchParams.get("search") ?? undefined;
-
-    const books = await book.findAll({ page, limit, search });
-    return Response.json(books);
+    const busca = searchParams.get("busca") ?? undefined;
+    const livros = await buscar({ busca });
+    return Response.json(livros);
   } catch (error) {
     if (error instanceof AppError) {
       return Response.json(
@@ -27,13 +25,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const contexto = contextoFromRequest(request);
     const body = await request.json();
-    const parsed = parseBody(createBookSchema, body);
+    const parsed = parseBody(createLivroSchema, body);
     if (!parsed.ok) {
       return Response.json({ error: parsed.error }, { status: 400 });
     }
-    const newBook = await book.create(parsed.data);
-    return Response.json(newBook, { status: 201 });
+    const livro = await criar(parsed.data, contexto);
+    return Response.json(livro, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
       return Response.json(
@@ -41,6 +40,7 @@ export async function POST(request: Request) {
         { status: error.status_code },
       );
     }
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },
