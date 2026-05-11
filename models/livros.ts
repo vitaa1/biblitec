@@ -123,10 +123,7 @@ export async function buscarPorId(id: string): Promise<Livro | null> {
 }
 
 export async function remover(id: string, contexto: Contexto): Promise<void> {
-  const [existente] = await db
-    .select()
-    .from(livros)
-    .where(and(eq(livros.id, id), isNull(livros.deletadoEm)));
+  const existente = await buscarPorId(id);
   if (!existente) throw new AppError("Livro não encontrado.", 404);
 
   if (contexto.papel === "gestor_giroteca") {
