@@ -139,9 +139,7 @@ export async function remover(id: string, contexto: Contexto): Promise<void> {
     .select({ total: count() })
     .from(emprestimos)
     .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
-    .where(
-      and(eq(exemplares.livroId, id), isNull(emprestimos.dataDevolucao)),
-    );
+    .where(and(eq(exemplares.livroId, id), isNull(emprestimos.dataDevolucao)));
 
   if (Number(total) > 0) {
     throw new AppError("Livro possui empréstimos em aberto.", 409);

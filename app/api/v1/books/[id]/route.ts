@@ -10,10 +10,7 @@ export async function GET(_request: Request, { params }: { params: Params }) {
     const { id } = await params;
     const livro = await buscarPorId(id);
     if (!livro) {
-      return Response.json(
-        { error: "Livro não encontrado." },
-        { status: 404 },
-      );
+      return Response.json({ error: "Livro não encontrado." }, { status: 404 });
     }
     return Response.json(livro);
   } catch (error) {
@@ -56,10 +53,7 @@ export async function PUT(request: Request, { params }: { params: Params }) {
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Params },
-) {
+export async function DELETE(request: Request, { params }: { params: Params }) {
   try {
     const contexto = contextoFromRequest(request);
     const { id } = await params;

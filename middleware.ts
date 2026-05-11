@@ -49,10 +49,7 @@ export async function middleware(request: NextRequest) {
       !decoded.id ||
       (decoded.papel !== "admin_nthe" && decoded.papel !== "gestor_giroteca")
     ) {
-      return NextResponse.json(
-        { error: "Token inválido." },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Token inválido." }, { status: 401 });
     }
 
     const isAdminRoute = adminRouteMatchers.some((m) =>
