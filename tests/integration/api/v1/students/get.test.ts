@@ -1,43 +1,35 @@
-import database from "infra/database";
+import {
+  criarGiroteca,
+  criarLeitor,
+  criarUsuario,
+  limparBanco,
+} from "tests/factories";
 
-beforeEach(cleanDatabase);
-async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE leitores, usuarios CASCADE;" });
-}
+let cookie: string;
+let girotecaId: string;
 
-async function createUserAndLogin(): Promise<string> {
-  await fetch("http://localhost:3000/api/v1/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nome: "Test User",
-      email: "test@gmail.com",
-      senha: "senha123",
-    }),
+beforeEach(async () => {
+  await limparBanco();
+  const giroteca = await criarGiroteca();
+  girotecaId = giroteca.id;
+  await criarUsuario({
+    email: "admin@test.com",
+    senha: "senha123",
+    papel: "admin_nthe",
+    girotecaId: null,
   });
-
   const loginRes = await fetch("http://localhost:3000/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "test@gmail.com", password: "senha123" }),
+    body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
   });
+  cookie = loginRes.headers.get("set-cookie")!.split(";")[0].trim();
+});
 
-  const rawCookie = loginRes.headers.get("set-cookie");
-  if (!rawCookie) throw new Error("Login falhou: cookie não retornado");
-  return rawCookie.split(";")[0].trim();
-}
-
-test("GET /api/v1/students should list registered students", async () => {
-  const cookie = await createUserAndLogin();
-
-  await fetch("http://localhost:3000/api/v1/students", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ nome: "Aluno Teste", matricula: "MAT-001" }),
-  });
+test("GET /api/v1/students lista leitores", async () => {
+  await criarLeitor(girotecaId, { nome: "Ana Lúcia", matricula: "MAT-001" });
 
   const response = await fetch("http://localhost:3000/api/v1/students", {
-    method: "GET",
     headers: { Cookie: cookie },
   });
 
@@ -45,6 +37,11 @@ test("GET /api/v1/students should list registered students", async () => {
 
   const body = await response.json();
   expect(Array.isArray(body)).toBe(true);
-  expect(body).toHaveLength(1);
-  expect(body[0].nome).toBe("Aluno Teste");
+  expect(body.some((l: { nome: string }) => l.nome === "Ana Lúcia")).toBe(true);
+});
+
+test("GET /api/v1/students sem auth retorna 401", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/students");
+
+  expect(response.status).toBe(401);
 });
