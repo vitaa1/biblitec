@@ -1,6 +1,6 @@
-import { and, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
 import { db } from "db/index";
-import { livros } from "db/schema";
+import { emprestimos, exemplares, livros } from "db/schema";
 import { AppError } from "infra/errors";
 import type { Contexto } from "lib/auth";
 
@@ -112,4 +112,46 @@ export async function atualizar(
     .where(eq(livros.id, id))
     .returning();
   return updated;
+}
+
+export async function buscarPorId(id: string): Promise<Livro | null> {
+  const [row] = await db
+    .select()
+    .from(livros)
+    .where(and(eq(livros.id, id), isNull(livros.deletadoEm)));
+  return row ?? null;
+}
+
+export async function remover(id: string, contexto: Contexto): Promise<void> {
+  const [existente] = await db
+    .select()
+    .from(livros)
+    .where(and(eq(livros.id, id), isNull(livros.deletadoEm)));
+  if (!existente) throw new AppError("Livro não encontrado.", 404);
+
+  if (contexto.papel === "gestor_giroteca") {
+    if (existente.origem === "central") {
+      throw new AppError("Não autorizado.", 403);
+    }
+    if (existente.criadoPorGirotecaId !== contexto.girotecaId) {
+      throw new AppError("Não autorizado.", 403);
+    }
+  }
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .where(
+      and(eq(exemplares.livroId, id), isNull(emprestimos.dataDevolucao)),
+    );
+
+  if (Number(total) > 0) {
+    throw new AppError("Livro possui empréstimos em aberto.", 409);
+  }
+
+  await db
+    .update(livros)
+    .set({ deletadoEm: new Date() })
+    .where(eq(livros.id, id));
 }
