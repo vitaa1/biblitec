@@ -23,7 +23,7 @@ export const updateLivroSchema = createLivroSchema.partial();
 export const createLeitorSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório."),
   matricula: z.string().min(1, "Matrícula é obrigatória."),
-  girotecaId: z.string().uuid("girotecaId deve ser um UUID válido."),
+  girotecaId: z.uuid("girotecaId deve ser um UUID válido."),
   turma: z.string().optional(),
   tipo: z.enum(["aluno", "professor", "funcionario"]).optional(),
   telefone: z.string().optional(),
@@ -31,17 +31,17 @@ export const createLeitorSchema = z.object({
 });
 
 export const createEmprestimoSchema = z.object({
-  exemplarId: z.string().uuid("exemplarId deve ser um UUID válido."),
-  leitorId: z.string().uuid("leitorId deve ser um UUID válido."),
+  exemplarId: z.uuid("exemplarId deve ser um UUID válido."),
+  leitorId: z.uuid("leitorId deve ser um UUID válido."),
   observacoes: z.string().optional(),
 });
 
 export const createUsuarioSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório."),
-  email: z.string().email("Email inválido."),
+  email: z.email("Email inválido."),
   senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres."),
   papel: z.enum(["admin_nthe", "gestor_giroteca"]),
-  girotecaId: z.string().uuid().optional(),
+  girotecaId: z.uuid().optional(),
 });
 
 export function parseBody<T>(
