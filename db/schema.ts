@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -61,24 +62,33 @@ export const girotecas = pgTable("girotecas", {
     .defaultNow(),
 });
 
-export const usuarios = pgTable("usuarios", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  nome: varchar("nome", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  senhaHash: varchar("senha_hash", { length: 255 }).notNull(),
-  papel: papelUsuarioEnum("papel").notNull(),
-  // NULL para admin_nthe (não vinculado a uma giroteca específica)
-  girotecaId: uuid("giroteca_id").references(() => girotecas.id, {
-    onDelete: "restrict",
-  }),
-  ativo: boolean("ativo").notNull().default(true),
-  criadoEm: timestamp("criado_em", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-  atualizadoEm: timestamp("atualizado_em", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const usuarios = pgTable(
+  "usuarios",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    nome: varchar("nome", { length: 255 }).notNull(),
+    email: varchar("email", { length: 255 }).notNull(),
+    senhaHash: varchar("senha_hash", { length: 255 }).notNull(),
+    papel: papelUsuarioEnum("papel").notNull(),
+    // NULL para admin_nthe (não vinculado a uma giroteca específica)
+    girotecaId: uuid("giroteca_id").references(() => girotecas.id, {
+      onDelete: "restrict",
+    }),
+    ativo: boolean("ativo").notNull().default(true),
+    criadoEm: timestamp("criado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    atualizadoEm: timestamp("atualizado_em", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    // Email único apenas entre usuários ativos — inativados podem ter o email reutilizado
+    uniqueIndex("usuarios_email_ativo_idx")
+      .on(table.email)
+      .where(sql`${table.ativo} = true`),
+  ],
+);
 
 export const livros = pgTable(
   "livros",

@@ -1,17 +1,18 @@
 import { AppError } from "infra/errors";
-import { updateBookSchema, parseBody } from "infra/schemas";
-import book from "models/books";
+import { updateLivroSchema, parseBody } from "infra/schemas";
+import { contextoFromRequest } from "lib/contexto";
+import { atualizar, buscarPorId, remover } from "models/livros";
 
 type Params = Promise<{ id: string }>;
 
 export async function GET(_request: Request, { params }: { params: Params }) {
   try {
     const { id } = await params;
-    const found = await book.findOneById(id);
-    if (!found) {
-      return Response.json({ error: "Livro não encontrado" }, { status: 404 });
+    const livro = await buscarPorId(id);
+    if (!livro) {
+      return Response.json({ error: "Livro não encontrado." }, { status: 404 });
     }
-    return Response.json(found);
+    return Response.json(livro);
   } catch (error) {
     if (error instanceof AppError) {
       return Response.json(
@@ -28,14 +29,15 @@ export async function GET(_request: Request, { params }: { params: Params }) {
 
 export async function PUT(request: Request, { params }: { params: Params }) {
   try {
+    const contexto = contextoFromRequest(request);
     const { id } = await params;
     const body = await request.json();
-    const parsed = parseBody(updateBookSchema, body);
+    const parsed = parseBody(updateLivroSchema, body);
     if (!parsed.ok) {
       return Response.json({ error: parsed.error }, { status: 400 });
     }
-    const updated = await book.update(id, parsed.data);
-    return Response.json(updated);
+    const livro = await atualizar(id, parsed.data, contexto);
+    return Response.json(livro);
   } catch (error) {
     if (error instanceof AppError) {
       return Response.json(
@@ -43,6 +45,7 @@ export async function PUT(request: Request, { params }: { params: Params }) {
         { status: error.status_code },
       );
     }
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },
@@ -50,13 +53,11 @@ export async function PUT(request: Request, { params }: { params: Params }) {
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Params },
-) {
+export async function DELETE(request: Request, { params }: { params: Params }) {
   try {
+    const contexto = contextoFromRequest(request);
     const { id } = await params;
-    await book.remove(id);
+    await remover(id, contexto);
     return new Response(null, { status: 204 });
   } catch (error) {
     if (error instanceof AppError) {
@@ -65,6 +66,7 @@ export async function DELETE(
         { status: error.status_code },
       );
     }
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },

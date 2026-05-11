@@ -1,44 +1,31 @@
-import database from "infra/database";
+import { criarUsuario, limparBanco } from "tests/factories";
 
-beforeEach(cleanDatabase);
-async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE livros, usuarios CASCADE;" });
-}
+let cookie: string;
 
-async function createUserAndLogin(): Promise<string> {
-  await fetch("http://localhost:3000/api/v1/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nome: "Test User",
-      email: "test@gmail.com",
-      senha: "senha123",
-    }),
+beforeEach(async () => {
+  await limparBanco();
+  await criarUsuario({
+    email: "admin@test.com",
+    senha: "senha123",
+    papel: "admin_nthe",
+    girotecaId: null,
   });
-
   const loginRes = await fetch("http://localhost:3000/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "test@gmail.com", password: "senha123" }),
+    body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
   });
+  cookie = loginRes.headers.get("set-cookie")!.split(";")[0].trim();
+});
 
-  const rawCookie = loginRes.headers.get("set-cookie");
-  if (!rawCookie) throw new Error("Login falhou: cookie não retornado");
-  return rawCookie.split(";")[0].trim();
-}
-
-test("POST /api/v1/books should create a book and return 201", async () => {
-  const cookie = await createUserAndLogin();
-
+test("POST /api/v1/books cria livro e retorna 201", async () => {
   const response = await fetch("http://localhost:3000/api/v1/books", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
       titulo: "Clean Code",
-      autor: "Robert Martin",
-      isbn: "978-0132350884",
-      ano: 2008,
-      quantidade: 3,
+      autores: "Robert Martin",
+      isbn: "9780132350884",
     }),
   });
 
@@ -46,43 +33,49 @@ test("POST /api/v1/books should create a book and return 201", async () => {
 
   const body = await response.json();
   expect(body.titulo).toBe("Clean Code");
-  expect(body.quantidade_disponivel).toBe(3);
+  expect(body.autores).toBe("Robert Martin");
   expect(body.id).toBeDefined();
+  expect(body.quantidade).toBeUndefined();
 });
 
-test("POST /api/v1/books with missing fields should return 400", async () => {
-  const cookie = await createUserAndLogin();
-
+test("POST /api/v1/books sem autores retorna 400", async () => {
   const response = await fetch("http://localhost:3000/api/v1/books", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify({ titulo: "Sem autor " }),
+    body: JSON.stringify({ titulo: "Só o título" }),
   });
 
   expect(response.status).toBe(400);
 });
 
-test("POST /api/v1/books with duplicate ISBN should return 409", async () => {
-  const cookie = await createUserAndLogin();
-  const bookData = {
+test("POST /api/v1/books ISBN duplicado retorna 409", async () => {
+  const data = {
     titulo: "Clean Code",
-    autor: "Robert Martin",
-    isbn: "978-0132350884",
-    ano: 2008,
-    quantidade: 2,
+    autores: "Robert Martin",
+    isbn: "9780132350884",
   };
 
   await fetch("http://localhost:3000/api/v1/books", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify(bookData),
+    body: JSON.stringify(data),
   });
 
   const response = await fetch("http://localhost:3000/api/v1/books", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
-    body: JSON.stringify(bookData),
+    body: JSON.stringify(data),
   });
 
   expect(response.status).toBe(409);
+});
+
+test("POST /api/v1/books sem auth retorna 401", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/books", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ titulo: "Teste", autores: "Autor" }),
+  });
+
+  expect(response.status).toBe(401);
 });

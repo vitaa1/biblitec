@@ -1,53 +1,35 @@
 import jwt from "jsonwebtoken";
-import { env } from "lib/env";
-import user from "models/user";
 import { NextResponse } from "next/server";
+import { AppError } from "infra/errors";
+import { loginSchema, parseBody } from "infra/schemas";
+import { env } from "lib/env";
+import { autenticar } from "models/usuarios";
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
-      return Response.json(
-        { error: "Email e senha são obrigatórios." },
-        { status: 400 },
-      );
+    const parsed = parseBody(loginSchema, await request.json());
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error }, { status: 400 });
     }
+    const { email, senha } = parsed.data;
 
-    const existingUser = await user.findOneByEmail(email);
-    if (!existingUser) {
-      return Response.json(
-        { error: "Credenciais inválidas." },
-        { status: 401 },
-      );
-    }
-
-    const passwordMatch = await user.validatePassword(
-      password,
-      existingUser.senha,
-    );
-    if (!passwordMatch) {
-      return Response.json(
-        { error: "Credenciais inválidas." },
-        { status: 401 },
-      );
-    }
+    const usuario = await autenticar(email, senha);
 
     const token = jwt.sign(
       {
-        id: existingUser.id,
-        email: existingUser.email,
-        papel: existingUser.papel,
+        id: usuario.id,
+        papel: usuario.papel,
+        girotecaId: usuario.girotecaId,
       },
       env.JWT_SECRET,
       { expiresIn: "1d" },
     );
 
     const response = NextResponse.json({
-      id: existingUser.id,
-      nome: existingUser.nome,
-      email: existingUser.email,
-      papel: existingUser.papel,
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      papel: usuario.papel,
     });
 
     response.cookies.set("token", token, {
@@ -60,6 +42,12 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
+    if (error instanceof AppError) {
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
+    }
     console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
