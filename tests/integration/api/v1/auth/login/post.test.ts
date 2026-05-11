@@ -1,43 +1,66 @@
-import database from "infra/database";
+import { criarUsuario, limparBanco } from "tests/factories";
 
-beforeAll(cleanDatabase);
-async function cleanDatabase() {
-  await database.query({ text: "TRUNCATE TABLE usuarios CASCADE;" });
-}
+beforeEach(async () => {
+  await limparBanco();
+});
 
-test("POST to api/v1/auth/login with valid credentials should return 200", async () => {
-  await fetch("http://localhost:3000/api/v1/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      nome: "Test User",
-      email: "test@test.com",
-      senha: "senha123",
-    }),
+test("POST /api/v1/auth/login com credenciais válidas retorna 200", async () => {
+  const usuario = await criarUsuario({
+    email: "admin@test.com",
+    senha: "senha123",
+    papel: "admin_nthe",
+    girotecaId: null,
   });
 
   const response = await fetch("http://localhost:3000/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "test@test.com", password: "senha123" }),
+    body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
   });
 
   expect(response.status).toBe(200);
 
-  const responseBody = await response.json();
-  expect(responseBody.email).toEqual("test@test.com");
-  expect(responseBody.password).toBeUndefined();
+  const body = await response.json();
+  expect(body.email).toBe("admin@test.com");
+  expect(body.papel).toBe("admin_nthe");
+  expect(body.senhaHash).toBeUndefined();
+
+  const cookie = response.headers.get("set-cookie");
+  expect(cookie).toMatch(/token=/);
+  expect(cookie).toMatch(/HttpOnly/);
 });
 
-test("POST to api/v1/auth/login with invalid credentials should return 401", async () => {
+test("POST /api/v1/auth/login com senha errada retorna 401", async () => {
+  await criarUsuario({ email: "admin@test.com", senha: "correta" });
+
   const response = await fetch("http://localhost:3000/api/v1/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "test@test.com", password: "senhaerrada" }),
+    body: JSON.stringify({ email: "admin@test.com", senha: "errada" }),
   });
 
   expect(response.status).toBe(401);
 
-  const responseBody = await response.json();
-  expect(responseBody.error).toEqual("Credenciais inválidas.");
+  const body = await response.json();
+  expect(body.error).toBe("Credenciais inválidas.");
+});
+
+test("POST /api/v1/auth/login com email inexistente retorna 401", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "naoexiste@test.com", senha: "qualquer" }),
+  });
+
+  expect(response.status).toBe(401);
+});
+
+test("POST /api/v1/auth/login sem campos retorna 400", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+
+  expect(response.status).toBe(400);
 });
