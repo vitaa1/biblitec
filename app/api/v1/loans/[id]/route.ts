@@ -1,23 +1,15 @@
 import { AppError } from "infra/errors";
-import loan from "models/loans";
-import { type NextRequest } from "next/server";
+import { contextoFromRequest } from "lib/contexto";
+import { devolver } from "models/emprestimos";
 
 type Params = Promise<{ id: string }>;
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Params },
-) {
-  const userId = request.headers.get("x-user-id");
-
-  if (!userId) {
-    return Response.json({ error: "Não autorizado." }, { status: 401 });
-  }
-
+export async function PATCH(request: Request, { params }: { params: Params }) {
   try {
+    const contexto = contextoFromRequest(request);
     const { id } = await params;
-    const returned = await loan.returnBook(id);
-    return Response.json(returned);
+    const emprestimo = await devolver(id, contexto);
+    return Response.json(emprestimo);
   } catch (error) {
     if (error instanceof AppError) {
       return Response.json(
@@ -25,6 +17,7 @@ export async function PATCH(
         { status: error.status_code },
       );
     }
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },
