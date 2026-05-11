@@ -15,6 +15,7 @@ export async function GET(request: Request) {
         { status: error.status_code },
       );
     }
+    console.error(error);
     return Response.json(
       { error: "Erro interno do servidor." },
       { status: 500 },

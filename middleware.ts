@@ -12,6 +12,7 @@ const publicRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
   ({ pathname, method }) =>
     pathname === "/api/v1/auth/logout" && method === "POST",
   ({ pathname, method }) => pathname === "/api/v1/status" && method === "GET",
+  // catálogo público — qualquer GET em /books ou /books/:id é sem auth por design
   ({ pathname, method }) =>
     pathname.startsWith("/api/v1/books") && method === "GET",
 ];

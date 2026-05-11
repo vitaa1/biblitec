@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, isNull, or } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, livros } from "db/schema";
 import { AppError } from "infra/errors";
@@ -21,7 +21,7 @@ export async function buscar(
         ilike(livros.titulo, t),
         ilike(livros.autores, t),
         ilike(livros.isbn, t),
-      )!,
+      ) as SQL,
     );
   }
   if (opts.categoria) {

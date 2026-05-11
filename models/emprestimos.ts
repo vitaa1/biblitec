@@ -121,9 +121,11 @@ export async function devolver(
       .from(exemplares)
       .where(eq(exemplares.id, emprestimo.exemplarId));
 
+    if (!exemplar) throw new AppError("Exemplar não encontrado.", 500);
+
     if (
       contexto.papel === "gestor_giroteca" &&
-      exemplar!.girotecaId !== contexto.girotecaId
+      exemplar.girotecaId !== contexto.girotecaId
     ) {
       throw new AppError("Não autorizado.", 403);
     }
@@ -162,9 +164,11 @@ export async function renovar(
     .from(exemplares)
     .where(eq(exemplares.id, emprestimo.exemplarId));
 
+  if (!exemplar) throw new AppError("Exemplar não encontrado.", 500);
+
   if (
     contexto.papel === "gestor_giroteca" &&
-    exemplar!.girotecaId !== contexto.girotecaId
+    exemplar.girotecaId !== contexto.girotecaId
   ) {
     throw new AppError("Não autorizado.", 403);
   }
@@ -193,6 +197,19 @@ export async function renovar(
   return updated;
 }
 
+const emprestimoCols = {
+  id: emprestimos.id,
+  exemplarId: emprestimos.exemplarId,
+  leitorId: emprestimos.leitorId,
+  registradoPorId: emprestimos.registradoPorId,
+  dataEmprestimo: emprestimos.dataEmprestimo,
+  dataPrevistaDevolucao: emprestimos.dataPrevistaDevolucao,
+  dataDevolucao: emprestimos.dataDevolucao,
+  renovacoes: emprestimos.renovacoes,
+  observacoes: emprestimos.observacoes,
+  criadoEm: emprestimos.criadoEm,
+};
+
 export async function listarEmAberto(
   contexto: Contexto,
 ): Promise<Emprestimo[]> {
@@ -204,21 +221,8 @@ export async function listarEmAberto(
       .orderBy(emprestimos.dataEmprestimo);
   }
 
-  const cols = {
-    id: emprestimos.id,
-    exemplarId: emprestimos.exemplarId,
-    leitorId: emprestimos.leitorId,
-    registradoPorId: emprestimos.registradoPorId,
-    dataEmprestimo: emprestimos.dataEmprestimo,
-    dataPrevistaDevolucao: emprestimos.dataPrevistaDevolucao,
-    dataDevolucao: emprestimos.dataDevolucao,
-    renovacoes: emprestimos.renovacoes,
-    observacoes: emprestimos.observacoes,
-    criadoEm: emprestimos.criadoEm,
-  };
-
   return db
-    .select(cols)
+    .select(emprestimoCols)
     .from(emprestimos)
     .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
     .where(
@@ -248,21 +252,8 @@ export async function listarAtrasados(
       .orderBy(emprestimos.dataPrevistaDevolucao);
   }
 
-  const cols = {
-    id: emprestimos.id,
-    exemplarId: emprestimos.exemplarId,
-    leitorId: emprestimos.leitorId,
-    registradoPorId: emprestimos.registradoPorId,
-    dataEmprestimo: emprestimos.dataEmprestimo,
-    dataPrevistaDevolucao: emprestimos.dataPrevistaDevolucao,
-    dataDevolucao: emprestimos.dataDevolucao,
-    renovacoes: emprestimos.renovacoes,
-    observacoes: emprestimos.observacoes,
-    criadoEm: emprestimos.criadoEm,
-  };
-
   return db
-    .select(cols)
+    .select(emprestimoCols)
     .from(emprestimos)
     .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
     .where(

@@ -3,23 +3,18 @@ import { AppError } from "infra/errors";
 
 export function contextoFromRequest(request: Request): Contexto {
   const usuarioId = request.headers.get("x-user-id");
-  const papel = request.headers.get("x-user-papel") as
-    | "admin_nthe"
-    | "gestor_giroteca"
-    | null;
+  const papelRaw = request.headers.get("x-user-papel");
   const girotecaIdHeader = request.headers.get("x-user-giroteca-id");
 
-  if (!usuarioId || !papel) {
-    throw new AppError("Não autenticado.", 401);
-  }
+  if (!usuarioId) throw new AppError("Não autenticado.", 401);
 
-  if (papel !== "admin_nthe" && papel !== "gestor_giroteca") {
+  if (papelRaw !== "admin_nthe" && papelRaw !== "gestor_giroteca") {
     throw new AppError("Não autenticado.", 401);
   }
 
   return {
     usuarioId,
-    papel,
+    papel: papelRaw,
     girotecaId: girotecaIdHeader || null,
   };
 }

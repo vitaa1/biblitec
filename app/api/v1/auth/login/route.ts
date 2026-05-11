@@ -1,20 +1,17 @@
 import jwt from "jsonwebtoken";
 import { NextResponse } from "next/server";
 import { AppError } from "infra/errors";
+import { loginSchema, parseBody } from "infra/schemas";
 import { env } from "lib/env";
 import { autenticar } from "models/usuarios";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { email, senha } = body as { email?: string; senha?: string };
-
-    if (!email || !senha) {
-      return Response.json(
-        { error: "Email e senha são obrigatórios." },
-        { status: 400 },
-      );
+    const parsed = parseBody(loginSchema, await request.json());
+    if (!parsed.ok) {
+      return Response.json({ error: parsed.error }, { status: 400 });
     }
+    const { email, senha } = parsed.data;
 
     const usuario = await autenticar(email, senha);
 

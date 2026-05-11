@@ -5,10 +5,16 @@ import { usuarios } from "db/schema";
 import { AppError } from "infra/errors";
 import type { Contexto } from "lib/auth";
 
-export type Usuario = typeof usuarios.$inferSelect;
-export type UsuarioPublico = Omit<Usuario, "senhaHash">;
+function isUniqueViolation(err: unknown): boolean {
+  if (typeof err !== "object" || err === null) return false;
+  const e = err as { code?: string; cause?: { code?: string } };
+  return e.code === "23505" || e.cause?.code === "23505";
+}
 
-function omitirSenha(u: Usuario): UsuarioPublico {
+export type Usuario = typeof usuarios.$inferSelect;
+export type UsuarioSemSenha = Omit<Usuario, "senhaHash">;
+
+function omitirSenha(u: Usuario): UsuarioSemSenha {
   const { senhaHash: _, ...pub } = u;
   return pub;
 }
@@ -16,7 +22,7 @@ function omitirSenha(u: Usuario): UsuarioPublico {
 export async function autenticar(
   email: string,
   senha: string,
-): Promise<UsuarioPublico> {
+): Promise<UsuarioSemSenha> {
   const [usuario] = await db
     .select()
     .from(usuarios)
@@ -44,7 +50,7 @@ export async function criar(
     girotecaId?: string;
   },
   contexto: Contexto,
-): Promise<UsuarioPublico> {
+): Promise<UsuarioSemSenha> {
   if (contexto.papel !== "admin_nthe") {
     throw new AppError("Não autorizado.", 403);
   }
@@ -54,32 +60,31 @@ export async function criar(
   }
 
   const email = input.email.toLowerCase().trim();
-  const [existente] = await db
-    .select()
-    .from(usuarios)
-    .where(and(eq(usuarios.email, email), eq(usuarios.ativo, true)));
-  if (existente) throw new AppError("Email já cadastrado.", 409);
-
   const senhaHash = await bcrypt.hash(input.senha, 10);
-  const [row] = await db
-    .insert(usuarios)
-    .values({
-      nome: input.nome,
-      email,
-      senhaHash,
-      papel: input.papel,
-      girotecaId: input.girotecaId,
-      ativo: true,
-    })
-    .returning();
 
-  return omitirSenha(row);
+  try {
+    const [row] = await db
+      .insert(usuarios)
+      .values({
+        nome: input.nome,
+        email,
+        senhaHash,
+        papel: input.papel,
+        girotecaId: input.girotecaId,
+        ativo: true,
+      })
+      .returning();
+    return omitirSenha(row);
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new AppError("Email já cadastrado.", 409);
+    throw err;
+  }
 }
 
 export async function listarPorGiroteca(
   girotecaId: string,
   contexto: Contexto,
-): Promise<UsuarioPublico[]> {
+): Promise<UsuarioSemSenha[]> {
   if (contexto.papel !== "admin_nthe" && contexto.girotecaId !== girotecaId) {
     throw new AppError("Não autorizado.", 403);
   }

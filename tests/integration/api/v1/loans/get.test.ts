@@ -50,7 +50,7 @@ test("GET /api/v1/loans lista empréstimos em aberto", async () => {
 
   const body = await response.json();
   expect(Array.isArray(body)).toBe(true);
-  expect(body.length).toBeGreaterThanOrEqual(1);
+  expect(body).toHaveLength(1);
   expect(body[0].exemplarId).toBe(exemplarId);
   expect(body[0].dataDevolucao).toBeNull();
 });

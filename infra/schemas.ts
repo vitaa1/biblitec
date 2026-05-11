@@ -36,12 +36,17 @@ export const createEmprestimoSchema = z.object({
   observacoes: z.string().optional(),
 });
 
+export const loginSchema = z.object({
+  email: z.string().min(1, "Email é obrigatório."),
+  senha: z.string().min(1, "Senha é obrigatória."),
+});
+
 export const createUsuarioSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório."),
   email: z.email("Email inválido."),
   senha: z.string().min(6, "Senha deve ter no mínimo 6 caracteres."),
   papel: z.enum(["admin_nthe", "gestor_giroteca"]),
-  girotecaId: z.uuid().optional(),
+  girotecaId: z.uuid("girotecaId deve ser um UUID válido.").optional(),
 });
 
 export function parseBody<T>(
