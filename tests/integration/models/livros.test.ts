@@ -1,4 +1,4 @@
-import { atualizar, buscar, criar, listarPorIsbn } from "models/livros";
+import { atualizar, buscarComFiltros, criar, listarPorIsbn } from "models/livros";
 import type { Contexto } from "lib/auth";
 import { criarGiroteca, criarUsuario, limparBanco } from "tests/factories";
 
@@ -21,39 +21,40 @@ beforeEach(async () => {
   };
 });
 
-test("buscar() retorna todos os livros ativos", async () => {
+test("buscarComFiltros() retorna todos os livros ativos", async () => {
   await criar(
     { titulo: "Dom Casmurro", autores: "Machado de Assis" },
     ctxAdmin,
   );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
-  const resultado = await buscar();
-  expect(resultado).toHaveLength(2);
+  const { livros, total } = await buscarComFiltros({}, ctxAdmin);
+  expect(livros).toHaveLength(2);
+  expect(total).toBe(2);
 });
 
-test("buscar() filtra por busca textual no título", async () => {
+test("buscarComFiltros() filtra por busca textual no título", async () => {
   await criar(
     { titulo: "Dom Casmurro", autores: "Machado de Assis" },
     ctxAdmin,
   );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
-  const resultado = await buscar({ busca: "Dom" });
-  expect(resultado).toHaveLength(1);
-  expect(resultado[0].titulo).toBe("Dom Casmurro");
+  const { livros } = await buscarComFiltros({ q: "Dom" }, ctxAdmin);
+  expect(livros).toHaveLength(1);
+  expect(livros[0].titulo).toBe("Dom Casmurro");
 });
 
-test("buscar() filtra por categoria", async () => {
+test("buscarComFiltros() filtra por ISBN exato (ignora hifens)", async () => {
   await criar(
-    { titulo: "Livro Infantil", autores: "Autor", categoria: "Infantil" },
+    { titulo: "Dom Casmurro", autores: "Machado de Assis", isbn: "9788535910663" },
     ctxAdmin,
   );
-  await criar(
-    { titulo: "Livro Literatura", autores: "Autor", categoria: "Literatura" },
+  await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
+  const { livros } = await buscarComFiltros(
+    { isbn: "978-85-359-1066-3" },
     ctxAdmin,
   );
-  const resultado = await buscar({ categoria: "Infantil" });
-  expect(resultado).toHaveLength(1);
-  expect(resultado[0].titulo).toBe("Livro Infantil");
+  expect(livros).toHaveLength(1);
+  expect(livros[0].titulo).toBe("Dom Casmurro");
 });
 
 test("listarPorIsbn() retorna livro existente", async () => {
