@@ -74,10 +74,13 @@ export function LivroList({ initialData }: LivroListProps) {
     buscar(filtros, page);
   }, [filtros, page, buscar]);
 
-  function handleSearch(novosFiltros: { q?: string; isbn?: string }) {
-    setFiltros(novosFiltros);
-    setPage(1);
-  }
+  const handleSearch = useCallback(
+    (novosFiltros: { q?: string; isbn?: string }) => {
+      setFiltros(novosFiltros);
+      setPage(1);
+    },
+    [],
+  );
 
   const termoBusca = filtros.q ?? filtros.isbn ?? "";
 

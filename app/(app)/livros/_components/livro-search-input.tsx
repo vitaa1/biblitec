@@ -13,12 +13,19 @@ interface LivroSearchInputProps {
 export function LivroSearchInput({ onSearch }: LivroSearchInputProps) {
   const [valor, setValor] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const primeiroRender = useRef(true);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
+    // Evita disparar busca na montagem — initialData já veio do servidor
+    if (primeiroRender.current) {
+      primeiroRender.current = false;
+      return;
+    }
+
     const timer = setTimeout(() => {
       const limpo = valor.trim();
       if (!limpo) {
