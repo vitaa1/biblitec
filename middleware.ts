@@ -8,7 +8,7 @@ const publicRouteMatchers: Array<(ctx: RouteCtx) => boolean> = [
   ({ pathname, method }) => pathname === "/api/v1/sessoes" && method === "POST",
   ({ pathname, method }) => pathname === "/api/v1/status" && method === "GET",
   ({ pathname, method }) =>
-    pathname.startsWith("/api/v1/books") && method === "GET",
+    pathname.startsWith("/api/v1/livros") && method === "GET",
 ];
 
 function stripUserHeaders(headers: Headers): Headers {

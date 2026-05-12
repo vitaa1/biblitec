@@ -114,6 +114,6 @@ test("rotas públicas acessíveis sem token", async () => {
   const statusRoute = await fetch("http://localhost:3000/api/v1/status");
   expect(statusRoute.status).toBe(200);
 
-  const booksRoute = await fetch("http://localhost:3000/api/v1/books");
+  const booksRoute = await fetch("http://localhost:3000/api/v1/livros");
   expect(booksRoute.status).toBe(200);
 });

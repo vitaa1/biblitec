@@ -19,7 +19,7 @@ beforeEach(async () => {
 });
 
 async function criarLivroViaApi(c: string) {
-  const res = await fetch("http://localhost:3000/api/v1/books", {
+  const res = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: c },
     body: JSON.stringify({
@@ -32,11 +32,11 @@ async function criarLivroViaApi(c: string) {
   return res.json();
 }
 
-test("PUT /api/v1/books/:id atualiza campos e retorna 200", async () => {
+test("PUT /api/v1/livros/:id atualiza campos e retorna 200", async () => {
   const livro = await criarLivroViaApi(cookie);
 
   const response = await fetch(
-    `http://localhost:3000/api/v1/books/${livro.id}`,
+    `http://localhost:3000/api/v1/livros/${livro.id}`,
     {
       method: "PUT",
       headers: { "Content-Type": "application/json", Cookie: cookie },
@@ -52,9 +52,9 @@ test("PUT /api/v1/books/:id atualiza campos e retorna 200", async () => {
   expect(body.titulo).toBe("Clean Code");
 });
 
-test("PUT /api/v1/books/:id livro inexistente retorna 404", async () => {
+test("PUT /api/v1/livros/:id livro inexistente retorna 404", async () => {
   const response = await fetch(
-    "http://localhost:3000/api/v1/books/00000000-0000-0000-0000-000000000000",
+    "http://localhost:3000/api/v1/livros/00000000-0000-0000-0000-000000000000",
     {
       method: "PUT",
       headers: { "Content-Type": "application/json", Cookie: cookie },
