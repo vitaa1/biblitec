@@ -37,7 +37,7 @@ test("loginAction seta cookie httpOnly e redireciona com credenciais válidas", 
   await loginAction(null, formData);
 
   expect(mockCookieSet).toHaveBeenCalledWith(
-    "token",
+    "biblitec_session",
     expect.any(String),
     expect.objectContaining({ httpOnly: true }),
   );

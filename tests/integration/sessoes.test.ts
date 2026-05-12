@@ -23,7 +23,7 @@ test("fluxo completo: login → requisição autenticada → logout", async () =
   });
   expect(login.status).toBe(200);
   const cookie = login.headers.get("set-cookie")!.split(";")[0];
-  expect(cookie).toMatch(/^token=/);
+  expect(cookie).toMatch(/^biblitec_session=/);
 
   // 2. requisição autenticada
   const sessao = await fetch(`${BASE}/sessoes`, {
@@ -59,13 +59,13 @@ test("login com credenciais erradas não concede acesso", async () => {
   expect(login.status).toBe(401);
 
   const cookieHeader = login.headers.get("set-cookie") ?? "";
-  expect(cookieHeader).not.toMatch(/^token=[^;]+/);
+  expect(cookieHeader).not.toMatch(/^biblitec_session=[^;]+/);
 });
 
 test("token adulterado não acessa rotas protegidas", async () => {
   const response = await fetch(`${BASE}/sessoes`, {
     method: "GET",
-    headers: { Cookie: "token=eyJhbGciOiJIUzI1NiJ9.falso.assinatura" },
+    headers: { Cookie: "biblitec_session=eyJhbGciOiJIUzI1NiJ9.falso.assinatura" },
   });
   expect(response.status).toBe(401);
 });

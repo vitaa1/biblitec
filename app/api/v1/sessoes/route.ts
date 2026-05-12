@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { AppError } from "infra/errors";
 import { loginSchema, parseBody } from "infra/schemas";
-import { assinarToken } from "lib/auth";
+import { SESSION_COOKIE_NAME, assinarToken } from "lib/auth";
 import { contextoFromRequest } from "lib/contexto";
 import { env } from "lib/env";
 import { criarRateLimiter } from "lib/rate-limit";
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       girotecaId: usuario.girotecaId,
     });
 
-    response.cookies.set("token", token, {
+    response.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       path: "/",
       maxAge: 86400,
@@ -71,7 +71,7 @@ export async function DELETE() {
     message: "Logout realizado com sucesso.",
   });
 
-  response.cookies.set("token", "", {
+  response.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     path: "/",
     maxAge: 0,

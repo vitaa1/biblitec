@@ -1,76 +1,65 @@
-import { jwtVerify } from "jose";
 import { type NextRequest, NextResponse } from "next/server";
-import { env } from "lib/env";
+import { getCurrentUser } from "lib/auth";
 
-type RouteContext = { pathname: string; method: string };
+type RouteCtx = { pathname: string; method: string };
 
-const secret = new TextEncoder().encode(env.JWT_SECRET);
-
-const publicRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
+const publicRouteMatchers: Array<(ctx: RouteCtx) => boolean> = [
+  ({ pathname }) => pathname === "/login",
   ({ pathname, method }) => pathname === "/api/v1/sessoes" && method === "POST",
   ({ pathname, method }) => pathname === "/api/v1/status" && method === "GET",
-  // catálogo público — qualquer GET em /books ou /books/:id é sem auth por design
   ({ pathname, method }) =>
     pathname.startsWith("/api/v1/books") && method === "GET",
 ];
 
-// Rotas que exigem papel admin_nthe (verificado no middleware além do model)
-const adminRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
-  ({ pathname }) => pathname.startsWith("/api/v1/migrations"),
-  ({ pathname, method }) => pathname === "/api/v1/users" && method === "POST",
-];
+function stripUserHeaders(headers: Headers): Headers {
+  const h = new Headers(headers);
+  h.delete("x-user-id");
+  h.delete("x-user-papel");
+  h.delete("x-user-giroteca-id");
+  return h;
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  const isPublicRoute = publicRouteMatchers.some((m) =>
-    m({ pathname, method }),
-  );
-  if (isPublicRoute) return NextResponse.next();
-
-  const token = request.cookies.get("token")?.value;
-  if (!token) {
-    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  // Rotas públicas: strip de qualquer x-user-* enviado pelo cliente antes de passar
+  if (publicRouteMatchers.some((m) => m({ pathname, method }))) {
+    return NextResponse.next({
+      request: { headers: stripUserHeaders(request.headers) },
+    });
   }
 
-  try {
-    const { payload } = await jwtVerify(token, secret);
-    const decoded = payload as {
-      id: string;
-      papel: "admin_nthe" | "gestor_giroteca";
-      girotecaId: string | null;
-    };
+  const contexto = await getCurrentUser(request);
+  const isApiRoute = pathname.startsWith("/api/");
 
-    if (
-      typeof decoded.id !== "string" ||
-      !decoded.id ||
-      (decoded.papel !== "admin_nthe" && decoded.papel !== "gestor_giroteca")
-    ) {
-      return NextResponse.json({ error: "Token inválido." }, { status: 401 });
+  if (!contexto) {
+    if (isApiRoute) {
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
-    const isAdminRoute = adminRouteMatchers.some((m) =>
-      m({ pathname, method }),
-    );
-    if (isAdminRoute && decoded.papel !== "admin_nthe") {
+  // ⚠ Limitação Edge Runtime: o JWT pode conter um girotecaId de giroteca
+  // desativada após o login. Verificações críticas devem acontecer nos models/.
+
+  if (pathname.startsWith("/admin/") && contexto.papel !== "admin_nthe") {
+    if (isApiRoute) {
       return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
     }
-
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set("x-user-id", decoded.id);
-    requestHeaders.set("x-user-papel", decoded.papel);
-    requestHeaders.set("x-user-giroteca-id", decoded.girotecaId ?? "");
-
-    return NextResponse.next({ request: { headers: requestHeaders } });
-  } catch {
-    return NextResponse.json(
-      { error: "Token inválido ou expirado." },
-      { status: 401 },
-    );
+    return NextResponse.redirect(new URL("/", request.url));
   }
+
+  // Sobrescreve (não apenas seta) os headers x-user-* — garante que valores
+  // injetados pelo cliente sejam sempre substituídos pelo JWT verificado.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-user-id", contexto.usuarioId);
+  requestHeaders.set("x-user-papel", contexto.papel);
+  requestHeaders.set("x-user-giroteca-id", contexto.girotecaId ?? "");
+
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
-  matcher: "/api/v1/:path*",
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

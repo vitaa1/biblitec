@@ -30,7 +30,7 @@ test("DELETE /api/v1/sessoes limpa o cookie e retorna 200", async () => {
   expect(response.status).toBe(200);
 
   const setCookie = response.headers.get("set-cookie") ?? "";
-  expect(setCookie).toMatch(/token=;|token=(?:;|$)/i);
+  expect(setCookie).toMatch(/biblitec_session=;|biblitec_session=(?:;|$)/i);
   expect(setCookie).toMatch(/Max-Age=0/i);
 });
 
