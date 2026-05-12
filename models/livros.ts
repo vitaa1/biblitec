@@ -21,6 +21,10 @@ export async function buscarComFiltros(
   filtros: FiltrosLivro,
   contexto: Contexto,
 ): Promise<{ livros: LivroComExemplares[]; total: number }> {
+  if (contexto.papel === "gestor_giroteca" && !contexto.girotecaId) {
+    throw new AppError("Contexto inválido: gestor sem giroteca.", 500);
+  }
+
   const page = Math.max(1, filtros.page ?? 1);
   const lim = Math.min(100, filtros.limit ?? 50);
   const offset = (page - 1) * lim;

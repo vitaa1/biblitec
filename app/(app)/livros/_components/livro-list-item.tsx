@@ -6,35 +6,22 @@ import type { LivroComExemplares } from "models/livros";
 
 interface LivroListItemProps {
   livro: LivroComExemplares;
-  focused: boolean;
   onClick: () => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
 }
 
-export function LivroListItem({
-  livro,
-  focused,
-  onClick,
-  onKeyDown,
-}: LivroListItemProps) {
+export function LivroListItem({ livro, onClick }: LivroListItemProps) {
   const semExemplares = livro.qtdDisponiveis === 0;
 
   return (
-    <div
-      role="row"
-      tabIndex={0}
+    <button
+      type="button"
       onClick={onClick}
-      onKeyDown={onKeyDown}
+      aria-label={`${livro.titulo} — ${livro.autores}`}
       className={[
-        "flex h-16 cursor-pointer items-center gap-3 px-4 py-2 transition-colors",
+        "flex h-16 w-full cursor-pointer items-center gap-3 px-4 py-2 text-left transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500",
-        semExemplares
-          ? "bg-red-50 hover:bg-red-100"
-          : "hover:bg-gray-50",
-        focused ? "ring-2 ring-inset ring-blue-400" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
+        semExemplares ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50",
+      ].join(" ")}
     >
       {/* Capa */}
       <div className="relative h-14 w-10 flex-shrink-0 overflow-hidden rounded shadow-sm">
@@ -83,6 +70,6 @@ export function LivroListItem({
       >
         ● {livro.qtdDisponiveis} disponíve{livro.qtdDisponiveis === 1 ? "l" : "is"}
       </div>
-    </div>
+    </button>
   );
 }

@@ -26,8 +26,8 @@ export function LivroList({ initialData }: LivroListProps) {
   const [page, setPage] = useState(1);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [focusedIndex, setFocusedIndex] = useState(-1);
   const abortRef = useRef<AbortController | null>(null);
+  const isMounted = useRef(false);
 
   const buscar = useCallback(
     async (filtrosAtivos: { q?: string; isbn?: string }, paginaAtiva: number) => {
@@ -37,7 +37,6 @@ export function LivroList({ initialData }: LivroListProps) {
 
       setCarregando(true);
       setErro(null);
-      setFocusedIndex(-1);
 
       try {
         const params = new URLSearchParams();
@@ -68,32 +67,16 @@ export function LivroList({ initialData }: LivroListProps) {
   );
 
   useEffect(() => {
-    if (
-      filtros === (initialData as unknown) &&
-      page === 1
-    ) return;
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
     buscar(filtros, page);
-  }, [filtros, page, buscar, initialData]);
+  }, [filtros, page, buscar]);
 
   function handleSearch(novosFiltros: { q?: string; isbn?: string }) {
     setFiltros(novosFiltros);
     setPage(1);
-  }
-
-  function handleKeyDown(
-    e: React.KeyboardEvent,
-    index: number,
-    livroId: string,
-  ) {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setFocusedIndex(Math.min(index + 1, dados.livros.length - 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setFocusedIndex(Math.max(index - 1, 0));
-    } else if (e.key === "Enter") {
-      router.push(`/livros/${livroId}`);
-    }
   }
 
   const termoBusca = filtros.q ?? filtros.isbn ?? "";
@@ -129,14 +112,12 @@ export function LivroList({ initialData }: LivroListProps) {
                 : "Nenhum livro cadastrado."}
             </div>
           ) : (
-            <div role="grid" aria-label="Lista de livros" className="divide-y divide-gray-100">
-              {dados.livros.map((livro, index) => (
+            <div className="divide-y divide-gray-100">
+              {dados.livros.map((livro) => (
                 <LivroListItem
                   key={livro.id}
                   livro={livro}
-                  focused={focusedIndex === index}
                   onClick={() => router.push(`/livros/${livro.id}`)}
-                  onKeyDown={(e) => handleKeyDown(e, index, livro.id)}
                 />
               ))}
             </div>
