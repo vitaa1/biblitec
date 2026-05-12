@@ -29,7 +29,7 @@ beforeEach(async () => {
     papel: "admin_nthe",
     girotecaId: null,
   });
-  const loginRes = await fetch("http://localhost:3000/api/v1/auth/login", {
+  const loginRes = await fetch("http://localhost:3000/api/v1/sessoes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),

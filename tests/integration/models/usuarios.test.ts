@@ -1,4 +1,9 @@
-import { autenticar, criar, listarPorGiroteca } from "models/usuarios";
+import {
+  autenticar,
+  buscarProprioPerfil,
+  criar,
+  listarPorGiroteca,
+} from "models/usuarios";
 import type { Contexto } from "lib/auth";
 import { criarGiroteca, criarUsuario, limparBanco } from "tests/factories";
 
@@ -151,6 +156,36 @@ test("criar() permite reutilizar email de usuário inativo", async () => {
   );
   expect(u2.email).toBe("reutilizar@test.com");
   expect(u2.id).not.toBe(u1.id);
+});
+
+test("buscarProprioPerfil() retorna próprio usuário sem senhaHash", async () => {
+  const usuario = await buscarProprioPerfil(ctxAdmin);
+  expect(usuario.id).toBe(ctxAdmin.usuarioId);
+  expect("senhaHash" in usuario).toBe(false);
+});
+
+test("buscarProprioPerfil() lança 404 para id inexistente", async () => {
+  const ctxFantasma = {
+    usuarioId: "00000000-0000-0000-0000-000000000000",
+    papel: "admin_nthe" as const,
+    girotecaId: null,
+  };
+  await expect(buscarProprioPerfil(ctxFantasma)).rejects.toMatchObject({
+    status_code: 404,
+  });
+});
+
+test("buscarProprioPerfil() lança 404 para usuário inativo", async () => {
+  const { db } = await import("db/index");
+  const { usuarios } = await import("db/schema");
+  const { eq } = await import("drizzle-orm");
+  await db
+    .update(usuarios)
+    .set({ ativo: false })
+    .where(eq(usuarios.id, ctxAdmin.usuarioId));
+  await expect(buscarProprioPerfil(ctxAdmin)).rejects.toMatchObject({
+    status_code: 404,
+  });
 });
 
 test("listarPorGiroteca() retorna usuários da giroteca", async () => {

@@ -1,0 +1,67 @@
+<h2>Layout da página de login</h2>
+<p class="subtitle">Qual estrutura funciona melhor para a Maria?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8fafc;border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:12px;min-height:200px;justify-content:center">
+        <div style="font-weight:700;font-size:18px;color:#1e293b">Biblitec</div>
+        <div style="font-size:11px;color:#64748b;margin-top:-8px">Girotecas de Teresina</div>
+        <div style="width:220px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin-top:8px;display:flex;flex-direction:column;gap:8px">
+          <div style="font-size:11px;color:#475569;font-weight:600">E-mail</div>
+          <input class="mock-input" placeholder="seu@email.com" style="font-size:12px">
+          <div style="font-size:11px;color:#475569;font-weight:600;margin-top:4px">Senha</div>
+          <input class="mock-input" placeholder="••••••••" style="font-size:12px">
+          <button class="mock-button" style="margin-top:4px;font-size:12px">Entrar no sistema</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Card centralizado</h3>
+      <p>Formulário no centro da tela, igual à tela inicial. Simples, familiar, sem distrações. Segue o padrão já existente no projeto.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8fafc;border-radius:8px;display:flex;min-height:200px;overflow:hidden">
+        <div style="flex:1;background:#1e3a5f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:16px">
+          <div style="font-weight:700;font-size:20px;color:#fff">📚</div>
+          <div style="font-weight:700;font-size:14px;color:#fff">Biblitec</div>
+          <div style="font-size:10px;color:#94a3b8;text-align:center">Sistema de gestão das girotecas da rede municipal</div>
+        </div>
+        <div style="flex:1.2;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:8px">
+          <div style="font-size:13px;font-weight:600;color:#1e293b">Entrar na sua conta</div>
+          <input class="mock-input" placeholder="E-mail" style="font-size:11px;width:100%">
+          <input class="mock-input" placeholder="Senha" style="font-size:11px;width:100%">
+          <button class="mock-button" style="font-size:11px;width:100%">Entrar</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Split (branding + formulário)</h3>
+      <p>Metade da tela com identidade visual, metade com o formulário. Mais impactante visualmente, mas adiciona complexidade sem benefício funcional para a Maria.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#f8fafc;border-radius:8px;padding:20px;min-height:200px;display:flex;flex-direction:column;justify-content:center">
+        <div style="max-width:240px;margin:0 auto;width:100%">
+          <div style="font-size:11px;color:#64748b;margin-bottom:16px;text-align:center">Sistema de gestão das girotecas</div>
+          <div style="font-size:11px;color:#475569;font-weight:600;margin-bottom:4px">E-mail</div>
+          <input class="mock-input" placeholder="seu@email.com" style="font-size:12px;width:100%;margin-bottom:10px">
+          <div style="font-size:11px;color:#475569;font-weight:600;margin-bottom:4px">Senha</div>
+          <input class="mock-input" placeholder="••••••••" style="font-size:12px;width:100%;margin-bottom:12px">
+          <button class="mock-button" style="font-size:12px;width:100%">Entrar no sistema</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Minimalista sem card</h3>
+      <p>Só o formulário, sem bordas nem card. Limpo, mas sem âncora visual — pode parecer "solto" para a Maria e causar insegurança sobre onde clicar.</p>
+    </div>
+  </div>
+
+</div>

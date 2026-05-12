@@ -18,7 +18,7 @@ beforeEach(async () => {
     papel: "admin_nthe",
     girotecaId: null,
   });
-  const loginRes = await fetch("http://localhost:3000/api/v1/auth/login", {
+  const loginRes = await fetch("http://localhost:3000/api/v1/sessoes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
@@ -59,7 +59,7 @@ test("GET /api/v1/students gestor só vê leitores da própria giroteca", async 
     papel: "gestor_giroteca",
     girotecaId: girotecaA.id,
   });
-  const loginRes = await fetch("http://localhost:3000/api/v1/auth/login", {
+  const loginRes = await fetch("http://localhost:3000/api/v1/sessoes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "gestor.a@test.com", senha: "senha123" }),

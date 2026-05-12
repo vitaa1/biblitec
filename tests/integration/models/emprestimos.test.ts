@@ -20,7 +20,7 @@ import { eq } from "drizzle-orm";
 
 let girotecaA: Awaited<ReturnType<typeof criarGiroteca>>;
 let girotecaB: Awaited<ReturnType<typeof criarGiroteca>>;
-let ctxAdmin: Contexto;
+let _ctxAdmin: Contexto;
 let ctxGestorA: Contexto;
 
 beforeEach(async () => {
@@ -32,7 +32,7 @@ beforeEach(async () => {
     papel: "gestor_giroteca",
     girotecaId: girotecaA.id,
   });
-  ctxAdmin = { usuarioId: admin.id, papel: "admin_nthe", girotecaId: null };
+  _ctxAdmin = { usuarioId: admin.id, papel: "admin_nthe", girotecaId: null };
   ctxGestorA = {
     usuarioId: gestorA.id,
     papel: "gestor_giroteca",

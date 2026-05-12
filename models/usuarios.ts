@@ -1,8 +1,8 @@
-import bcrypt from "bcryptjs";
 import { and, eq } from "drizzle-orm";
 import { db } from "db/index";
 import { usuarios } from "db/schema";
 import { AppError } from "infra/errors";
+import { hashSenha, verificarSenha } from "lib/auth";
 import type { Contexto } from "lib/auth";
 
 function isUniqueViolation(err: unknown): boolean {
@@ -35,7 +35,7 @@ export async function autenticar(
 
   if (!usuario) throw new AppError("Credenciais inválidas.", 401);
 
-  const senhaCorreta = await bcrypt.compare(senha, usuario.senhaHash);
+  const senhaCorreta = await verificarSenha(senha, usuario.senhaHash);
   if (!senhaCorreta) throw new AppError("Credenciais inválidas.", 401);
 
   return omitirSenha(usuario);
@@ -60,7 +60,7 @@ export async function criar(
   }
 
   const email = input.email.toLowerCase().trim();
-  const senhaHash = await bcrypt.hash(input.senha, 10);
+  const senhaHash = await hashSenha(input.senha);
 
   try {
     const [row] = await db
@@ -79,6 +79,18 @@ export async function criar(
     if (isUniqueViolation(err)) throw new AppError("Email já cadastrado.", 409);
     throw err;
   }
+}
+
+export async function buscarProprioPerfil(
+  contexto: Contexto,
+): Promise<UsuarioSemSenha> {
+  const [usuario] = await db
+    .select()
+    .from(usuarios)
+    .where(and(eq(usuarios.id, contexto.usuarioId), eq(usuarios.ativo, true)));
+
+  if (!usuario) throw new AppError("Usuário não encontrado.", 404);
+  return omitirSenha(usuario);
 }
 
 export async function listarPorGiroteca(
