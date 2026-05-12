@@ -24,14 +24,14 @@ beforeEach(async () => {
     girotecaId,
   });
 
-  const loginAdmin = await fetch("http://localhost:3000/api/v1/auth/login", {
+  const loginAdmin = await fetch("http://localhost:3000/api/v1/sessoes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
   });
   adminCookie = loginAdmin.headers.get("set-cookie")!.split(";")[0].trim();
 
-  const loginGestor = await fetch("http://localhost:3000/api/v1/auth/login", {
+  const loginGestor = await fetch("http://localhost:3000/api/v1/sessoes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "gestor@test.com", senha: "senha123" }),

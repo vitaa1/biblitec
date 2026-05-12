@@ -7,10 +7,7 @@ type RouteContext = { pathname: string; method: string };
 const secret = new TextEncoder().encode(env.JWT_SECRET);
 
 const publicRouteMatchers: Array<(ctx: RouteContext) => boolean> = [
-  ({ pathname, method }) =>
-    pathname === "/api/v1/auth/login" && method === "POST",
-  ({ pathname, method }) =>
-    pathname === "/api/v1/auth/logout" && method === "POST",
+  ({ pathname, method }) => pathname === "/api/v1/sessoes" && method === "POST",
   ({ pathname, method }) => pathname === "/api/v1/status" && method === "GET",
   // catálogo público — qualquer GET em /books ou /books/:id é sem auth por design
   ({ pathname, method }) =>
