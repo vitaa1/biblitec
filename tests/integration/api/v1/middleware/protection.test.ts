@@ -57,7 +57,7 @@ test("rota protegida com token válido retorna 200", async () => {
 test("rota protegida com token malformado retorna 401", async () => {
   const response = await fetch(ROTA_PROTEGIDA, {
     method: "GET",
-    headers: { Cookie: "token=isso.nao.e.um.jwt" },
+    headers: { Cookie: "biblitec_session=isso.nao.e.um.jwt" },
   });
   expect(response.status).toBe(401);
 });
@@ -70,7 +70,7 @@ test("rota protegida com token assinado com segredo errado retorna 401", async (
   );
   const response = await fetch(ROTA_PROTEGIDA, {
     method: "GET",
-    headers: { Cookie: `token=${tokenFalso}` },
+    headers: { Cookie: `biblitec_session=${tokenFalso}` },
   });
   expect(response.status).toBe(401);
 });

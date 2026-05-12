@@ -27,7 +27,7 @@ test("POST /api/v1/sessoes retorna 200 e seta cookie com credenciais válidas", 
   expect(body.senhaHash).toBeUndefined();
 
   const cookie = response.headers.get("set-cookie");
-  expect(cookie).toMatch(/token=/);
+  expect(cookie).toMatch(/biblitec_session=/);
   expect(cookie).toMatch(/HttpOnly/i);
 });
 

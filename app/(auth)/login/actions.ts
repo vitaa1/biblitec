@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppError } from "infra/errors";
 import { loginSchema, parseBody } from "infra/schemas";
-import { assinarToken } from "lib/auth";
+import { SESSION_COOKIE_NAME, assinarToken } from "lib/auth";
 import { env } from "lib/env";
 import { autenticar } from "models/usuarios";
 
@@ -33,7 +33,7 @@ export async function loginAction(
     });
 
     const cookieStore = await cookies();
-    cookieStore.set("token", token, {
+    cookieStore.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
       path: "/",
       maxAge: 86400,
