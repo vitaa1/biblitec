@@ -63,11 +63,17 @@ test("getCurrentUser() retorna null sem cookie", async () => {
 });
 
 test("getCurrentUser() retorna null com token malformado", async () => {
-  expect(await getCurrentUser(makeRequest("biblitec_session=isso.nao.e.um.jwt"))).toBeNull();
+  expect(
+    await getCurrentUser(makeRequest("biblitec_session=isso.nao.e.um.jwt")),
+  ).toBeNull();
 });
 
 test("getCurrentUser() retorna Contexto com token válido", async () => {
-  const token = assinarToken({ id: "abc", papel: "admin_nthe", girotecaId: null });
+  const token = assinarToken({
+    id: "abc",
+    papel: "admin_nthe",
+    girotecaId: null,
+  });
   const ctx = await getCurrentUser(makeRequest(`biblitec_session=${token}`));
   expect(ctx).not.toBeNull();
   expect(ctx!.usuarioId).toBe("abc");
@@ -81,11 +87,21 @@ test("getCurrentUser() retorna null com token assinado com segredo errado", asyn
     "segredo-errado",
     { expiresIn: "1d" },
   );
-  expect(await getCurrentUser(makeRequest(`biblitec_session=${token}`))).toBeNull();
+  expect(
+    await getCurrentUser(makeRequest(`biblitec_session=${token}`)),
+  ).toBeNull();
 });
 
-const ctxAdmin = { usuarioId: "u1", papel: "admin_nthe" as const, girotecaId: null };
-const ctxGestor = { usuarioId: "u2", papel: "gestor_giroteca" as const, girotecaId: "g1" };
+const ctxAdmin = {
+  usuarioId: "u1",
+  papel: "admin_nthe" as const,
+  girotecaId: null,
+};
+const ctxGestor = {
+  usuarioId: "u2",
+  papel: "gestor_giroteca" as const,
+  girotecaId: "g1",
+};
 
 test("requireRole() retorna contexto quando papel bate", () => {
   expect(requireRole(ctxAdmin, "admin_nthe")).toBe(ctxAdmin);

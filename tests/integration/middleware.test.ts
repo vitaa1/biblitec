@@ -80,7 +80,7 @@ test("C2: gestor A não vê leitores da giroteca B (filtrado em models)", async 
     headers: { Cookie: gestorACookie },
   });
   expect(r.status).toBe(200);
-  const ids = (await r.json() as Array<{ id: string }>).map((l) => l.id);
+  const ids = ((await r.json()) as Array<{ id: string }>).map((l) => l.id);
   expect(ids).toContain(leitorA.id);
   expect(ids).not.toContain(leitorB.id);
 });
@@ -110,7 +110,7 @@ test("C3: admin vê leitores de todas as girotecas", async () => {
     headers: { Cookie: adminCookie },
   });
   expect(r.status).toBe(200);
-  const ids = (await r.json() as Array<{ id: string }>).map((l) => l.id);
+  const ids = ((await r.json()) as Array<{ id: string }>).map((l) => l.id);
   expect(ids).toContain(leitorA.id);
   expect(ids).toContain(leitorB.id);
 });

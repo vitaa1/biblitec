@@ -37,11 +37,11 @@ export function verificarToken(token: string): TokenPayload {
 export const SESSION_COOKIE_NAME = "biblitec_session";
 
 const joseSecret = new TextEncoder().encode(env.JWT_SECRET);
-const cookiePattern = new RegExp(
-  `(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`,
-);
+const cookiePattern = new RegExp(`(?:^|;\\s*)${SESSION_COOKIE_NAME}=([^;]+)`);
 
-export async function getCurrentUser(request: Request): Promise<Contexto | null> {
+export async function getCurrentUser(
+  request: Request,
+): Promise<Contexto | null> {
   const cookieHeader = request.headers.get("Cookie") ?? "";
   const match = cookieHeader.match(cookiePattern);
   if (!match) return null;

@@ -65,7 +65,9 @@ test("login com credenciais erradas não concede acesso", async () => {
 test("token adulterado não acessa rotas protegidas", async () => {
   const response = await fetch(`${BASE}/sessoes`, {
     method: "GET",
-    headers: { Cookie: "biblitec_session=eyJhbGciOiJIUzI1NiJ9.falso.assinatura" },
+    headers: {
+      Cookie: "biblitec_session=eyJhbGciOiJIUzI1NiJ9.falso.assinatura",
+    },
   });
   expect(response.status).toBe(401);
 });
