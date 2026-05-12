@@ -28,7 +28,7 @@ beforeEach(async () => {
 });
 
 async function criarLivroViaApi(c: string) {
-  const res = await fetch("http://localhost:3000/api/v1/books", {
+  const res = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: c },
     body: JSON.stringify({ titulo: "Clean Code", autores: "Robert Martin" }),
@@ -37,46 +37,51 @@ async function criarLivroViaApi(c: string) {
   return res.json();
 }
 
-test("DELETE /api/v1/books/:id remove livro e retorna 204", async () => {
+test("DELETE /api/v1/livros/:id remove livro e retorna 204", async () => {
   const livro = await criarLivroViaApi(cookie);
 
   const response = await fetch(
-    `http://localhost:3000/api/v1/books/${livro.id}`,
+    `http://localhost:3000/api/v1/livros/${livro.id}`,
     { method: "DELETE", headers: { Cookie: cookie } },
   );
 
   expect(response.status).toBe(204);
 
-  const getRes = await fetch(`http://localhost:3000/api/v1/books/${livro.id}`);
+  const getRes = await fetch(
+    `http://localhost:3000/api/v1/livros/${livro.id}`,
+    {
+      headers: { Cookie: cookie },
+    },
+  );
   expect(getRes.status).toBe(404);
 });
 
-test("DELETE /api/v1/books/:id livro inexistente retorna 404", async () => {
+test("DELETE /api/v1/livros/:id livro inexistente retorna 404", async () => {
   const response = await fetch(
-    "http://localhost:3000/api/v1/books/00000000-0000-0000-0000-000000000000",
+    "http://localhost:3000/api/v1/livros/00000000-0000-0000-0000-000000000000",
     { method: "DELETE", headers: { Cookie: cookie } },
   );
 
   expect(response.status).toBe(404);
 });
 
-test("DELETE /api/v1/books/:id já deletado retorna 404", async () => {
+test("DELETE /api/v1/livros/:id já deletado retorna 404", async () => {
   const livro = await criarLivroViaApi(cookie);
 
-  await fetch(`http://localhost:3000/api/v1/books/${livro.id}`, {
+  await fetch(`http://localhost:3000/api/v1/livros/${livro.id}`, {
     method: "DELETE",
     headers: { Cookie: cookie },
   });
 
   const response = await fetch(
-    `http://localhost:3000/api/v1/books/${livro.id}`,
+    `http://localhost:3000/api/v1/livros/${livro.id}`,
     { method: "DELETE", headers: { Cookie: cookie } },
   );
 
   expect(response.status).toBe(404);
 });
 
-test("DELETE /api/v1/books/:id com empréstimo ativo retorna 409", async () => {
+test("DELETE /api/v1/livros/:id com empréstimo ativo retorna 409", async () => {
   const giroteca = await criarGiroteca();
   const livro = await criarLivro();
   const exemplar = await criarExemplar(livro.id, giroteca.id);
@@ -94,7 +99,7 @@ test("DELETE /api/v1/books/:id com empréstimo ativo retorna 409", async () => {
   });
 
   const response = await fetch(
-    `http://localhost:3000/api/v1/books/${livro.id}`,
+    `http://localhost:3000/api/v1/livros/${livro.id}`,
     { method: "DELETE", headers: { Cookie: cookie } },
   );
 

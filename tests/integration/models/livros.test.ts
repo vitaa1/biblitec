@@ -1,6 +1,16 @@
-import { atualizar, buscar, criar, listarPorIsbn } from "models/livros";
+import {
+  atualizar,
+  buscarComFiltros,
+  criar,
+  listarPorIsbn,
+} from "models/livros";
 import type { Contexto } from "lib/auth";
-import { criarGiroteca, criarUsuario, limparBanco } from "tests/factories";
+import {
+  criarExemplar,
+  criarGiroteca,
+  criarUsuario,
+  limparBanco,
+} from "tests/factories";
 
 let ctxAdmin: Contexto;
 let ctxGestor: Contexto;
@@ -21,39 +31,111 @@ beforeEach(async () => {
   };
 });
 
-test("buscar() retorna todos os livros ativos", async () => {
+test("buscarComFiltros() retorna todos os livros ativos", async () => {
   await criar(
     { titulo: "Dom Casmurro", autores: "Machado de Assis" },
     ctxAdmin,
   );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
-  const resultado = await buscar();
-  expect(resultado).toHaveLength(2);
+  const { livros, total } = await buscarComFiltros({}, ctxAdmin);
+  expect(livros).toHaveLength(2);
+  expect(total).toBe(2);
 });
 
-test("buscar() filtra por busca textual no título", async () => {
+test("buscarComFiltros() filtra por busca textual no título", async () => {
   await criar(
     { titulo: "Dom Casmurro", autores: "Machado de Assis" },
     ctxAdmin,
   );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
-  const resultado = await buscar({ busca: "Dom" });
-  expect(resultado).toHaveLength(1);
-  expect(resultado[0].titulo).toBe("Dom Casmurro");
+  const { livros } = await buscarComFiltros({ q: "Dom" }, ctxAdmin);
+  expect(livros).toHaveLength(1);
+  expect(livros[0].titulo).toBe("Dom Casmurro");
 });
 
-test("buscar() filtra por categoria", async () => {
+test("buscarComFiltros() filtra por ISBN exato (ignora hifens)", async () => {
   await criar(
-    { titulo: "Livro Infantil", autores: "Autor", categoria: "Infantil" },
+    {
+      titulo: "Dom Casmurro",
+      autores: "Machado de Assis",
+      isbn: "9788535910663",
+    },
     ctxAdmin,
   );
-  await criar(
-    { titulo: "Livro Literatura", autores: "Autor", categoria: "Literatura" },
+  await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
+  const { livros } = await buscarComFiltros(
+    { isbn: "978-85-359-1066-3" },
     ctxAdmin,
   );
-  const resultado = await buscar({ categoria: "Infantil" });
-  expect(resultado).toHaveLength(1);
-  expect(resultado[0].titulo).toBe("Livro Infantil");
+  expect(livros).toHaveLength(1);
+  expect(livros[0].titulo).toBe("Dom Casmurro");
+});
+
+test("buscarComFiltros() sem resultados retorna array vazio e total 0", async () => {
+  const { livros, total } = await buscarComFiltros(
+    { q: "inexistente" },
+    ctxAdmin,
+  );
+  expect(livros).toHaveLength(0);
+  expect(total).toBe(0);
+});
+
+test("buscarComFiltros() gestor vê apenas qtdDisponiveis da própria giroteca", async () => {
+  const outraGiroteca = await criarGiroteca();
+  const outroGestor = await criarUsuario({
+    papel: "gestor_giroteca",
+    girotecaId: outraGiroteca.id,
+  });
+  const ctxOutro: Contexto = {
+    usuarioId: outroGestor.id,
+    papel: "gestor_giroteca",
+    girotecaId: outraGiroteca.id,
+  };
+
+  const livro = await criar(
+    { titulo: "Compartilhado", autores: "Autor" },
+    ctxAdmin,
+  );
+  // 1 exemplar na giroteca do ctxGestor, 2 exemplares na outra giroteca
+  await criarExemplar(livro.id, ctxGestor.girotecaId!);
+  await criarExemplar(livro.id, outraGiroteca.id);
+  await criarExemplar(livro.id, outraGiroteca.id);
+
+  const { livros: livrosGestor } = await buscarComFiltros({}, ctxGestor);
+  const { livros: livrosOutro } = await buscarComFiltros({}, ctxOutro);
+
+  expect(livrosGestor[0].qtdDisponiveis).toBe(1);
+  expect(livrosOutro[0].qtdDisponiveis).toBe(2);
+});
+
+test("buscarComFiltros() admin_nthe vê contagem global de exemplares", async () => {
+  const outraGiroteca = await criarGiroteca();
+  const livro = await criar({ titulo: "Global", autores: "Autor" }, ctxAdmin);
+  await criarExemplar(livro.id, ctxGestor.girotecaId!);
+  await criarExemplar(livro.id, outraGiroteca.id);
+
+  const { livros } = await buscarComFiltros({}, ctxAdmin);
+  expect(livros[0].qtdDisponiveis).toBe(2);
+});
+
+test("buscarComFiltros() paginação não repete itens entre páginas", async () => {
+  for (let i = 1; i <= 3; i++) {
+    await criar({ titulo: `Livro ${i}`, autores: "Autor" }, ctxAdmin);
+  }
+  const { livros: pag1 } = await buscarComFiltros(
+    { limit: 2, page: 1 },
+    ctxAdmin,
+  );
+  const { livros: pag2 } = await buscarComFiltros(
+    { limit: 2, page: 2 },
+    ctxAdmin,
+  );
+
+  expect(pag1).toHaveLength(2);
+  expect(pag2).toHaveLength(1);
+  const idsPag1 = pag1.map((l) => l.id);
+  const idsPag2 = pag2.map((l) => l.id);
+  expect(idsPag1.some((id) => idsPag2.includes(id))).toBe(false);
 });
 
 test("listarPorIsbn() retorna livro existente", async () => {

@@ -18,8 +18,8 @@ beforeEach(async () => {
   cookie = loginRes.headers.get("set-cookie")!.split(";")[0].trim();
 });
 
-test("POST /api/v1/books cria livro e retorna 201", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/books", {
+test("POST /api/v1/livros cria livro e retorna 201", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({
@@ -38,8 +38,8 @@ test("POST /api/v1/books cria livro e retorna 201", async () => {
   expect(body.quantidade).toBeUndefined();
 });
 
-test("POST /api/v1/books sem autores retorna 400", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/books", {
+test("POST /api/v1/livros sem autores retorna 400", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({ titulo: "Só o título" }),
@@ -48,20 +48,20 @@ test("POST /api/v1/books sem autores retorna 400", async () => {
   expect(response.status).toBe(400);
 });
 
-test("POST /api/v1/books ISBN duplicado retorna 409", async () => {
+test("POST /api/v1/livros ISBN duplicado retorna 409", async () => {
   const data = {
     titulo: "Clean Code",
     autores: "Robert Martin",
     isbn: "9780132350884",
   };
 
-  await fetch("http://localhost:3000/api/v1/books", {
+  await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify(data),
   });
 
-  const response = await fetch("http://localhost:3000/api/v1/books", {
+  const response = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify(data),
@@ -70,8 +70,8 @@ test("POST /api/v1/books ISBN duplicado retorna 409", async () => {
   expect(response.status).toBe(409);
 });
 
-test("POST /api/v1/books sem auth retorna 401", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/books", {
+test("POST /api/v1/livros sem auth retorna 401", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ titulo: "Teste", autores: "Autor" }),

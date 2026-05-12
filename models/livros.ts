@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, isNull, or, type SQL } from "drizzle-orm";
+import { and, count, eq, ilike, isNull, or, sql, type SQL } from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, livros } from "db/schema";
 import { AppError } from "infra/errors";
@@ -6,33 +6,84 @@ import type { Contexto } from "lib/auth";
 
 export type Livro = typeof livros.$inferSelect;
 
-export async function buscar(
-  opts: {
-    busca?: string;
-    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
-  } = {},
-): Promise<Livro[]> {
-  const conds = [isNull(livros.deletadoEm)];
+export type LivroComExemplares = Livro & {
+  qtdDisponiveis: number;
+};
 
-  if (opts.busca) {
-    const t = `%${opts.busca.trim()}%`;
-    conds.push(
-      or(
-        ilike(livros.titulo, t),
-        ilike(livros.autores, t),
-        ilike(livros.isbn, t),
-      ) as SQL,
-    );
-  }
-  if (opts.categoria) {
-    conds.push(eq(livros.categoria, opts.categoria));
+export const LIVROS_POR_PAGINA = 50;
+
+type FiltrosLivro = {
+  q?: string;
+  isbn?: string;
+  page?: number;
+  limit?: number;
+};
+
+export async function buscarComFiltros(
+  filtros: FiltrosLivro,
+  contexto: Contexto,
+): Promise<{ livros: LivroComExemplares[]; total: number }> {
+  if (contexto.papel === "gestor_giroteca" && !contexto.girotecaId) {
+    throw new AppError("Contexto inválido: gestor sem giroteca.", 500);
   }
 
-  return db
-    .select()
+  const page = Math.max(1, filtros.page ?? 1);
+  const lim = Math.min(100, filtros.limit ?? LIVROS_POR_PAGINA);
+  const offset = (page - 1) * lim;
+
+  const conds: SQL[] = [isNull(livros.deletadoEm)];
+
+  if (filtros.isbn) {
+    conds.push(eq(livros.isbn, filtros.isbn.replace(/-/g, "")));
+  } else if (filtros.q) {
+    const t = `%${filtros.q.trim()}%`;
+    conds.push(or(ilike(livros.titulo, t), ilike(livros.autores, t)) as SQL);
+  }
+
+  const where = and(...conds);
+
+  // COUNT com FILTER evita N+1: uma única query agrega exemplares por livro.
+  // Para gestor, restringe à própria giroteca. Para admin, contagem global.
+  const qtdDisponiveisExpr =
+    contexto.papel === "admin_nthe"
+      ? sql<number>`COUNT(${exemplares.id}) FILTER (WHERE ${exemplares.status} = 'disponivel')`.mapWith(
+          Number,
+        )
+      : sql<number>`COUNT(${exemplares.id}) FILTER (WHERE ${exemplares.status} = 'disponivel' AND ${exemplares.girotecaId} = ${contexto.girotecaId})`.mapWith(
+          Number,
+        );
+
+  const [{ total }] = await db
+    .select({ total: count() })
     .from(livros)
-    .where(and(...conds))
-    .orderBy(livros.titulo);
+    .where(where);
+
+  const rows = await db
+    .select({
+      id: livros.id,
+      titulo: livros.titulo,
+      autores: livros.autores,
+      isbn: livros.isbn,
+      editora: livros.editora,
+      anoPublicacao: livros.anoPublicacao,
+      categoria: livros.categoria,
+      capaUrl: livros.capaUrl,
+      origem: livros.origem,
+      criadoPorGirotecaId: livros.criadoPorGirotecaId,
+      criadoEm: livros.criadoEm,
+      atualizadoEm: livros.atualizadoEm,
+      deletadoEm: livros.deletadoEm,
+      qtdDisponiveis: qtdDisponiveisExpr,
+    })
+    .from(livros)
+    .leftJoin(exemplares, eq(exemplares.livroId, livros.id))
+    .where(where)
+    .groupBy(livros.id)
+    .orderBy(livros.titulo)
+    .limit(lim)
+    .offset(offset);
+
+  return { livros: rows as LivroComExemplares[], total: Number(total) };
 }
 
 export async function listarPorIsbn(isbn: string): Promise<Livro | null> {
