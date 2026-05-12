@@ -47,7 +47,9 @@ test("DELETE /api/v1/livros/:id remove livro e retorna 204", async () => {
 
   expect(response.status).toBe(204);
 
-  const getRes = await fetch(`http://localhost:3000/api/v1/livros/${livro.id}`);
+  const getRes = await fetch(`http://localhost:3000/api/v1/livros/${livro.id}`, {
+    headers: { Cookie: cookie },
+  });
   expect(getRes.status).toBe(404);
 });
 
