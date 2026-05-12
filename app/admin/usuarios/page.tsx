@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { mockUsuarios } from "./mock-users";
 import type { Usuario } from "./types";
 import { gerarSenhaTemporaria } from "./utils";
@@ -72,7 +73,10 @@ export default function AdminUsuariosPage() {
     setDesativarDialog({ open: false, usuario: null });
   }
 
-  const emailsExistentes = usuarios.map((u) => u.email.toLowerCase());
+  const emailsExistentes = useMemo(
+    () => usuarios.map((u) => u.email.toLowerCase()),
+    [usuarios],
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -95,15 +99,17 @@ export default function AdminUsuariosPage() {
 
         {/* Gestalt - Região comum: área de filtros delimitada, separada da tabela */}
         <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-          <Input
-            id="busca"
-            type="search"
-            placeholder="Buscar por nome ou e-mail..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="max-w-sm"
-            aria-label="Filtrar usuários por nome ou e-mail"
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="busca">Buscar usuário</Label>
+            <Input
+              id="busca"
+              type="search"
+              placeholder="Nome ou e-mail..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
         </div>
 
         {/* Gestalt - Fechamento: tabela com borda completa delimitando a unidade */}

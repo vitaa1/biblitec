@@ -1,4 +1,4 @@
-export type Papel = "admin_nthe" | "gestor" | "usuario";
+export type Papel = "admin_nthe" | "gestor_giroteca";
 
 export type StatusUsuario = "ativo" | "inativo";
 

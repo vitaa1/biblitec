@@ -81,6 +81,10 @@ export function NewUserDialog({
     }
   }
 
+  function handleEmailBlur(email: string) {
+    if (email.trim()) validarEmail(email);
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.nome || !form.email || !form.papel || erroNome || erroEmail)
@@ -90,7 +94,7 @@ export function NewUserDialog({
       nome: form.nome.trim(),
       email: form.email.toLowerCase(),
       papel: form.papel as Papel,
-      ...(form.papel === "gestor" && form.girotecaVinculada
+      ...(form.papel === "gestor_giroteca" && form.girotecaVinculada
         ? { girotecaVinculada: form.girotecaVinculada }
         : {}),
     });
@@ -106,7 +110,7 @@ export function NewUserDialog({
     Boolean(form.email.trim()) &&
     Boolean(form.papel) &&
     !erroEmail &&
-    (form.papel !== "gestor" || Boolean(form.girotecaVinculada));
+    (form.papel !== "gestor_giroteca" || Boolean(form.girotecaVinculada));
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && fechar()}>
@@ -150,8 +154,9 @@ export function NewUserDialog({
               value={form.email}
               onChange={(e) => {
                 setForm((f) => ({ ...f, email: e.target.value }));
-                validarEmail(e.target.value);
+                if (erroEmail) validarEmail(e.target.value);
               }}
+              onBlur={(e) => handleEmailBlur(e.target.value)}
               placeholder="Ex: ana.melo@nthe.pi.gov.br"
               required
               aria-describedby={erroEmail ? "email-error" : undefined}
@@ -184,14 +189,13 @@ export function NewUserDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="admin_nthe">Administrador</SelectItem>
-                <SelectItem value="gestor">Gestor</SelectItem>
-                <SelectItem value="usuario">Usuário</SelectItem>
+                <SelectItem value="gestor_giroteca">Gestor</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Campo condicional — só exibe quando papel = gestor */}
-          {form.papel === "gestor" && (
+          {form.papel === "gestor_giroteca" && (
             <div className="space-y-1.5">
               <Label htmlFor="giroteca">Giroteca vinculada</Label>
               <Select

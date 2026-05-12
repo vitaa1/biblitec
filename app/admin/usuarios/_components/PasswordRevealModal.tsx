@@ -24,11 +24,17 @@ export function PasswordRevealModal({
   onClose,
 }: PasswordRevealModalProps) {
   const [copiado, setCopiado] = useState(false);
+  const [erroCopia, setErroCopia] = useState(false);
 
   async function copiarSenha() {
-    await navigator.clipboard.writeText(senha);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
+    try {
+      await navigator.clipboard.writeText(senha);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      setErroCopia(true);
+      setTimeout(() => setErroCopia(false), 3000);
+    }
   }
 
   return (
@@ -65,7 +71,11 @@ export function PasswordRevealModal({
             onClick={copiarSenha}
             aria-label="Copiar senha temporária para a área de transferência"
           >
-            {copiado ? "Copiado!" : "Copiar senha"}
+            {copiado
+              ? "Copiado!"
+              : erroCopia
+                ? "Falha ao copiar"
+                : "Copiar senha"}
           </Button>
           <Button
             onClick={onClose}

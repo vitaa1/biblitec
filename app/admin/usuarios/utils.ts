@@ -5,17 +5,25 @@ const CHARS = {
   special: "!@#$%^&*",
 };
 
+function secureRandomInt(max: number): number {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+}
+
 export function gerarSenhaTemporaria(): string {
   const todos = CHARS.upper + CHARS.lower + CHARS.digits + CHARS.special;
-  const obrigatorios = [
-    CHARS.upper[Math.floor(Math.random() * CHARS.upper.length)],
-    CHARS.lower[Math.floor(Math.random() * CHARS.lower.length)],
-    CHARS.digits[Math.floor(Math.random() * CHARS.digits.length)],
-    CHARS.special[Math.floor(Math.random() * CHARS.special.length)],
+  const arr = [
+    CHARS.upper[secureRandomInt(CHARS.upper.length)],
+    CHARS.lower[secureRandomInt(CHARS.lower.length)],
+    CHARS.digits[secureRandomInt(CHARS.digits.length)],
+    CHARS.special[secureRandomInt(CHARS.special.length)],
+    ...Array.from({ length: 8 }, () => todos[secureRandomInt(todos.length)]),
   ];
-  const resto = Array.from(
-    { length: 8 },
-    () => todos[Math.floor(Math.random() * todos.length)],
-  );
-  return [...obrigatorios, ...resto].sort(() => Math.random() - 0.5).join("");
+  // Fisher-Yates com CSPRNG para permutação uniforme
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = secureRandomInt(i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr.join("");
 }

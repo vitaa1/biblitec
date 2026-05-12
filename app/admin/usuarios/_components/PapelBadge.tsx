@@ -5,13 +5,9 @@ const PAPEL_CONFIG: Record<Papel, { label: string; className: string }> = {
     label: "Administrador",
     className: "bg-purple-100 text-purple-800 border border-purple-200",
   },
-  gestor: {
+  gestor_giroteca: {
     label: "Gestor",
     className: "bg-amber-100 text-amber-800 border border-amber-200",
-  },
-  usuario: {
-    label: "Usuário",
-    className: "bg-blue-100 text-blue-800 border border-blue-200",
   },
 };
 
