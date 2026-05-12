@@ -64,7 +64,7 @@ export function LivroListItem({ livro, onClick }: LivroListItemProps) {
       <div
         className={[
           "flex-shrink-0 text-xs font-medium",
-          semExemplares ? "text-red-700" : "text-gray-600",
+          semExemplares ? "text-red-700" : "text-green-700",
         ].join(" ")}
         aria-label={`${livro.qtdDisponiveis} exemplar${livro.qtdDisponiveis === 1 ? "" : "es"} disponível${livro.qtdDisponiveis === 1 ? "" : "is"}`}
       >
