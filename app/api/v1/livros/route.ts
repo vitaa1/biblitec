@@ -2,11 +2,11 @@ import { z } from "zod";
 import { AppError } from "infra/errors";
 import { createLivroSchema, parseBody } from "infra/schemas";
 import { contextoFromRequest } from "lib/contexto";
-import { buscarComFiltros, criar } from "models/livros";
+import { buscarComFiltros, criar, LIVROS_POR_PAGINA } from "models/livros";
 
 const filtrosSchema = z.object({
-  q: z.string().optional(),
-  isbn: z.string().optional(),
+  q: z.string().min(1).optional(),
+  isbn: z.string().regex(/^[\d-]{10,17}$/).optional(),
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
 });
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const resultado = await buscarComFiltros({ q, isbn, page, limit }, contexto);
     const totalPages = Math.max(
       1,
-      Math.ceil(resultado.total / (limit ?? 50)),
+      Math.ceil(resultado.total / (limit ?? LIVROS_POR_PAGINA)),
     );
     return Response.json({
       livros: resultado.livros,

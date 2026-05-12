@@ -1,6 +1,6 @@
 export function LivroListSkeleton() {
   return (
-    <div className="divide-y divide-gray-100">
+    <div className="divide-y divide-gray-100" aria-hidden="true">
       {Array.from({ length: 8 }).map((_, i) => (
         <div key={i} className="flex h-16 items-center gap-3 px-4 py-2">
           <div className="h-14 w-10 flex-shrink-0 animate-pulse rounded bg-gray-200" />

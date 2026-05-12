@@ -10,6 +10,8 @@ export type LivroComExemplares = Livro & {
   qtdDisponiveis: number;
 };
 
+export const LIVROS_POR_PAGINA = 50;
+
 type FiltrosLivro = {
   q?: string;
   isbn?: string;
@@ -26,7 +28,7 @@ export async function buscarComFiltros(
   }
 
   const page = Math.max(1, filtros.page ?? 1);
-  const lim = Math.min(100, filtros.limit ?? 50);
+  const lim = Math.min(100, filtros.limit ?? LIVROS_POR_PAGINA);
   const offset = (page - 1) * lim;
 
   const conds: SQL[] = [isNull(livros.deletadoEm)];

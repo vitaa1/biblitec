@@ -108,6 +108,27 @@ test("GET /api/v1/livros gestor vê qtdDisponiveis apenas da própria giroteca",
   expect(body.livros[0].qtdDisponiveis).toBe(1);
 });
 
+test("GET /api/v1/livros gestor busca ISBN com exemplares só em outra giroteca — livro aparece com qtdDisponiveis 0", async () => {
+  const outraGiroteca = await criarGiroteca();
+  const livro = await criarLivro({
+    titulo: "Só na outra",
+    autores: "Autor",
+    isbn: "9780000000001",
+  });
+  // exemplar apenas na outra giroteca, não na do gestor
+  await criarExemplar(livro.id, outraGiroteca.id);
+
+  const res = await fetch(
+    "http://localhost:3000/api/v1/livros?isbn=9780000000001",
+    { headers: { Cookie: gestorCookie } },
+  );
+
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  expect(body.livros).toHaveLength(1);
+  expect(body.livros[0].qtdDisponiveis).toBe(0);
+});
+
 test("GET /api/v1/livros busca sem resultado retorna array vazio, não erro", async () => {
   const res = await fetch(
     "http://localhost:3000/api/v1/livros?q=naoexistejamais",
