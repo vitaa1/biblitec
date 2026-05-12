@@ -13,8 +13,9 @@ export function gerarSenhaTemporaria(): string {
     CHARS.digits[Math.floor(Math.random() * CHARS.digits.length)],
     CHARS.special[Math.floor(Math.random() * CHARS.special.length)],
   ];
-  const resto = Array.from({ length: 8 }, () =>
-    todos[Math.floor(Math.random() * todos.length)],
+  const resto = Array.from(
+    { length: 8 },
+    () => todos[Math.floor(Math.random() * todos.length)],
   );
   return [...obrigatorios, ...resto].sort(() => Math.random() - 0.5).join("");
 }
