@@ -3,12 +3,9 @@ import "./lib/env";
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
+    // capaUrl pode vir de qualquer domínio externo; otimização desabilitada
+    // para evitar que o endpoint /_next/image sirva como proxy arbitrário.
+    unoptimized: true,
   },
 };
 
