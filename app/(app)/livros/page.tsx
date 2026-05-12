@@ -7,7 +7,10 @@ export const metadata = { title: "Catálogo — Biblitec" };
 export default async function LivrosPage() {
   const contexto = await contextoFromServerComponent();
   const initialData = await buscarComFiltros({}, contexto);
-  const totalPages = Math.max(1, Math.ceil(initialData.total / LIVROS_POR_PAGINA));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(initialData.total / LIVROS_POR_PAGINA),
+  );
 
   return (
     <LivroList

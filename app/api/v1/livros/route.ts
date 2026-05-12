@@ -6,7 +6,10 @@ import { buscarComFiltros, criar, LIVROS_POR_PAGINA } from "models/livros";
 
 const filtrosSchema = z.object({
   q: z.string().min(1).optional(),
-  isbn: z.string().regex(/^[\d-]{10,17}$/).optional(),
+  isbn: z
+    .string()
+    .regex(/^[\d-]{10,17}$/)
+    .optional(),
   page: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().positive().optional(),
 });
@@ -23,7 +26,10 @@ export async function GET(request: Request) {
       );
     }
     const { q, isbn, page, limit } = parsed.data;
-    const resultado = await buscarComFiltros({ q, isbn, page, limit }, contexto);
+    const resultado = await buscarComFiltros(
+      { q, isbn, page, limit },
+      contexto,
+    );
     const totalPages = Math.max(
       1,
       Math.ceil(resultado.total / (limit ?? LIVROS_POR_PAGINA)),

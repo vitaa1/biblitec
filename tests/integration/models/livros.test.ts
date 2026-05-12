@@ -1,4 +1,9 @@
-import { atualizar, buscarComFiltros, criar, listarPorIsbn } from "models/livros";
+import {
+  atualizar,
+  buscarComFiltros,
+  criar,
+  listarPorIsbn,
+} from "models/livros";
 import type { Contexto } from "lib/auth";
 import {
   criarExemplar,
@@ -50,7 +55,11 @@ test("buscarComFiltros() filtra por busca textual no título", async () => {
 
 test("buscarComFiltros() filtra por ISBN exato (ignora hifens)", async () => {
   await criar(
-    { titulo: "Dom Casmurro", autores: "Machado de Assis", isbn: "9788535910663" },
+    {
+      titulo: "Dom Casmurro",
+      autores: "Machado de Assis",
+      isbn: "9788535910663",
+    },
     ctxAdmin,
   );
   await criar({ titulo: "Vidas Secas", autores: "Graciliano Ramos" }, ctxAdmin);
@@ -63,7 +72,10 @@ test("buscarComFiltros() filtra por ISBN exato (ignora hifens)", async () => {
 });
 
 test("buscarComFiltros() sem resultados retorna array vazio e total 0", async () => {
-  const { livros, total } = await buscarComFiltros({ q: "inexistente" }, ctxAdmin);
+  const { livros, total } = await buscarComFiltros(
+    { q: "inexistente" },
+    ctxAdmin,
+  );
   expect(livros).toHaveLength(0);
   expect(total).toBe(0);
 });
@@ -80,7 +92,10 @@ test("buscarComFiltros() gestor vê apenas qtdDisponiveis da própria giroteca",
     girotecaId: outraGiroteca.id,
   };
 
-  const livro = await criar({ titulo: "Compartilhado", autores: "Autor" }, ctxAdmin);
+  const livro = await criar(
+    { titulo: "Compartilhado", autores: "Autor" },
+    ctxAdmin,
+  );
   // 1 exemplar na giroteca do ctxGestor, 2 exemplares na outra giroteca
   await criarExemplar(livro.id, ctxGestor.girotecaId!);
   await criarExemplar(livro.id, outraGiroteca.id);
@@ -107,8 +122,14 @@ test("buscarComFiltros() paginação não repete itens entre páginas", async ()
   for (let i = 1; i <= 3; i++) {
     await criar({ titulo: `Livro ${i}`, autores: "Autor" }, ctxAdmin);
   }
-  const { livros: pag1 } = await buscarComFiltros({ limit: 2, page: 1 }, ctxAdmin);
-  const { livros: pag2 } = await buscarComFiltros({ limit: 2, page: 2 }, ctxAdmin);
+  const { livros: pag1 } = await buscarComFiltros(
+    { limit: 2, page: 1 },
+    ctxAdmin,
+  );
+  const { livros: pag2 } = await buscarComFiltros(
+    { limit: 2, page: 2 },
+    ctxAdmin,
+  );
 
   expect(pag1).toHaveLength(2);
   expect(pag2).toHaveLength(1);

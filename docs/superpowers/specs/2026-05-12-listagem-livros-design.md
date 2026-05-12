@@ -74,10 +74,10 @@ middleware.ts                       # MODIFICAR — /books → /livros na rota p
 
 ```ts
 type FiltrosLivro = {
-  q?: string;       // ILIKE em título e autores
-  isbn?: string;    // match exato (sem hifens)
-  page?: number;    // default 1
-  limit?: number;   // default 50
+  q?: string; // ILIKE em título e autores
+  isbn?: string; // match exato (sem hifens)
+  page?: number; // default 1
+  limit?: number; // default 50
 };
 
 export type LivroComExemplares = Livro & {
@@ -87,7 +87,7 @@ export type LivroComExemplares = Livro & {
 export async function buscarComFiltros(
   filtros: FiltrosLivro,
   contexto: Contexto,
-): Promise<{ livros: LivroComExemplares[]; total: number }>
+): Promise<{ livros: LivroComExemplares[]; total: number }>;
 ```
 
 Query usa `LEFT JOIN exemplares` com `COUNT(*) FILTER (WHERE status = 'disponivel' AND giroteca_id = $1)`.  
@@ -111,23 +111,26 @@ Query params validados com Zod. Contexto vem exclusivamente do cookie JWT (via h
 
 ## Componentes
 
-**`livro-search-input.tsx`** — Client Component  
-- `useRef` no input, auto-foco ao montar  
-- Debounce 300ms com `useEffect` + `setTimeout`  
-- Detecta ISBN: `if (/^\d{10,13}$/.test(value.replace(/-/g, '')))` → usa param `isbn`, senão `q`  
+**`livro-search-input.tsx`** — Client Component
+
+- `useRef` no input, auto-foco ao montar
+- Debounce 300ms com `useEffect` + `setTimeout`
+- Detecta ISBN: `if (/^\d{10,13}$/.test(value.replace(/-/g, '')))` → usa param `isbn`, senão `q`
 - Ao limpar campo, reseta para página 1
 
-**`livro-list.tsx`** — Client Component  
-- Recebe `initialData` como estado inicial  
-- `AbortController` cancela request anterior a cada nova busca (evita race condition)  
-- Navegação por teclado: setas movem `focusedIndex`, Enter navega para `/livros/[id]`  
-- Paginação: "Anterior" / "Próxima" + "Página X de Y"  
+**`livro-list.tsx`** — Client Component
+
+- Recebe `initialData` como estado inicial
+- `AbortController` cancela request anterior a cada nova busca (evita race condition)
+- Navegação por teclado: setas movem `focusedIndex`, Enter navega para `/livros/[id]`
+- Paginação: "Anterior" / "Próxima" + "Página X de Y"
 - Estados: loading / erro / vazio / lista
 
-**`livro-list-item.tsx`** — Client Component  
-- `tabIndex={0}`, `role="row"` (ou `<button>`)  
-- `focus-visible:ring-2` para foco visível  
-- Linha com `qtdDisponiveis === 0`: fundo `red-50`, texto `red-700`  
+**`livro-list-item.tsx`** — Client Component
+
+- `tabIndex={0}`, `role="row"` (ou `<button>`)
+- `focus-visible:ring-2` para foco visível
+- Linha com `qtdDisponiveis === 0`: fundo `red-50`, texto `red-700`
 - Fallback de capa: ícone de livro cinza quando URL quebrada
 
 ---
@@ -145,16 +148,16 @@ Linha com 0 exemplares: fundo vermelho-50, contador em vermelho-700.
 
 ## Edge cases
 
-| Cenário | Comportamento |
-|---|---|
-| ISBN com hifens | Limpar antes de comparar |
-| Busca sem resultados | "Nenhum livro encontrado para '[termo]'." |
+| Cenário                 | Comportamento                                |
+| ----------------------- | -------------------------------------------- |
+| ISBN com hifens         | Limpar antes de comparar                     |
+| Busca sem resultados    | "Nenhum livro encontrado para '[termo]'."    |
 | Giroteca sem exemplares | Exibir livro com "0 disponíveis" em vermelho |
-| Admin NTHE | Contagem global, sem filtro de giroteca |
-| Campo limpo | Recarregar lista completa (página 1) |
-| Página maior que total | Redirecionar para última página válida |
-| Capa indisponível | Fallback ícone cinza |
-| Caracteres especiais | Drizzle parametriza — sem risco de injection |
+| Admin NTHE              | Contagem global, sem filtro de giroteca      |
+| Campo limpo             | Recarregar lista completa (página 1)         |
+| Página maior que total  | Redirecionar para última página válida       |
+| Capa indisponível       | Fallback ícone cinza                         |
+| Caracteres especiais    | Drizzle parametriza — sem risco de injection |
 
 ---
 

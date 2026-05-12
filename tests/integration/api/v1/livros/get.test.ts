@@ -79,7 +79,11 @@ test("GET /api/v1/livros?q= filtra por título", async () => {
 });
 
 test("GET /api/v1/livros?isbn= filtra por ISBN (com hifens)", async () => {
-  await criarLivro({ titulo: "Dom Casmurro", autores: "Machado", isbn: "9788535910663" });
+  await criarLivro({
+    titulo: "Dom Casmurro",
+    autores: "Machado",
+    isbn: "9788535910663",
+  });
   await criarLivro({ titulo: "Vidas Secas", autores: "Graciliano" });
 
   const res = await fetch(

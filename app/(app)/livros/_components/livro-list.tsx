@@ -30,7 +30,10 @@ export function LivroList({ initialData }: LivroListProps) {
   const isMounted = useRef(false);
 
   const buscar = useCallback(
-    async (filtrosAtivos: { q?: string; isbn?: string }, paginaAtiva: number) => {
+    async (
+      filtrosAtivos: { q?: string; isbn?: string },
+      paginaAtiva: number,
+    ) => {
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;

@@ -68,7 +68,8 @@ export function LivroListItem({ livro, onClick }: LivroListItemProps) {
         ].join(" ")}
         aria-label={`${livro.qtdDisponiveis} exemplar${livro.qtdDisponiveis === 1 ? "" : "es"} disponível${livro.qtdDisponiveis === 1 ? "" : "is"}`}
       >
-        ● {livro.qtdDisponiveis} disponíve{livro.qtdDisponiveis === 1 ? "l" : "is"}
+        ● {livro.qtdDisponiveis} disponíve
+        {livro.qtdDisponiveis === 1 ? "l" : "is"}
       </div>
     </button>
   );
