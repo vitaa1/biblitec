@@ -98,11 +98,12 @@ export async function criar(
   input: {
     titulo: string;
     autores: string;
+    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     isbn?: string;
     editora?: string;
     anoPublicacao?: number;
-    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     capaUrl?: string;
+    descricao?: string;
   },
   contexto: Contexto,
 ): Promise<Livro> {
@@ -129,11 +130,12 @@ export async function atualizar(
   input: {
     titulo?: string;
     autores?: string;
+    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     isbn?: string;
     editora?: string;
     anoPublicacao?: number;
-    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     capaUrl?: string;
+    descricao?: string;
   },
   contexto: Contexto,
 ): Promise<Livro> {
