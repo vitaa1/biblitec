@@ -95,6 +95,25 @@ export async function criarLeitor(
   return row;
 }
 
+export async function criarEmprestimo(
+  exemplarId: string,
+  leitorId: string,
+  registradoPorId: string,
+  override: Partial<typeof emprestimos.$inferInsert> = {},
+) {
+  const [row] = await db
+    .insert(emprestimos)
+    .values({
+      exemplarId,
+      leitorId,
+      registradoPorId,
+      dataPrevistaDevolucao: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+      ...override,
+    })
+    .returning();
+  return row;
+}
+
 export async function limparBanco() {
   // Ordem importa: FK constraints
   await db.delete(emprestimos);
