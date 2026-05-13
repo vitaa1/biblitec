@@ -65,8 +65,8 @@ export function DesativarGirotecaDialog({ girotecaId, nomeGiroteca }: Props) {
           <DialogHeader>
             <DialogTitle>Desativar giroteca</DialogTitle>
             <DialogDescription>
-              Desativar <strong>{nomeGiroteca}</strong>? Novos empréstimos
-              serão bloqueados.
+              Desativar <strong>{nomeGiroteca}</strong>? Novos empréstimos serão
+              bloqueados.
             </DialogDescription>
           </DialogHeader>
 
