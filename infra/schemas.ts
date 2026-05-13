@@ -53,6 +53,21 @@ export const createUsuarioSchema = z.object({
   girotecaId: z.uuid("girotecaId deve ser um UUID válido.").optional(),
 });
 
+export const createExemplarSchema = z.object({
+  codigoTombamento: z
+    .string()
+    .min(1, "Código de tombamento é obrigatório.")
+    .max(50, "Código de tombamento deve ter no máximo 50 caracteres."),
+  estado: z.enum(["novo", "bom", "regular", "danificado"]).optional(),
+  observacoes: z.string().optional(),
+});
+
+export const baixarExemplarSchema = z.object({
+  motivo: z.enum(["Perdido", "Danificado", "Descartado", "Outro"], {
+    error: "Selecione um motivo.",
+  }),
+});
+
 export function parseBody<T>(
   schema: z.ZodSchema<T>,
   data: unknown,

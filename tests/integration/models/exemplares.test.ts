@@ -1,12 +1,16 @@
 import {
   buscarPorTombamento,
   criarParaGiroteca,
+  listarPorLivroNaGiroteca,
   mudarStatus,
+  sugerirProximoCodigo,
 } from "models/exemplares";
 import type { Contexto } from "lib/auth";
 import {
+  criarEmprestimo,
   criarExemplar,
   criarGiroteca,
+  criarLeitor,
   criarLivro,
   criarUsuario,
   limparBanco,
@@ -93,15 +97,25 @@ test("mudarStatus() baixa exemplar disponível", async () => {
   expect(atualizado.status).toBe("baixado");
 });
 
-test("mudarStatus() não pode baixar exemplar emprestado", async () => {
+test("mudarStatus() não pode baixar exemplar emprestado — inclui nome do leitor", async () => {
   const livro = await criarLivro();
+  const leitor = await criarLeitor(girotecaA.id, { nome: "João Antônio" });
+  const gestorUser = await criarUsuario({
+    papel: "gestor_giroteca",
+    girotecaId: girotecaA.id,
+  });
   const exemplar = await criarExemplar(livro.id, girotecaA.id, {
     codigoTombamento: "A001-011",
     status: "emprestado",
   });
+  await criarEmprestimo(exemplar.id, leitor.id, gestorUser.id);
+
   await expect(
     mudarStatus(exemplar.id, "baixado", "Perdido", ctxGestorA),
-  ).rejects.toMatchObject({ status_code: 409 });
+  ).rejects.toMatchObject({
+    status_code: 409,
+    message: expect.stringContaining("João Antônio"),
+  });
 });
 
 test("mudarStatus() gestor não pode alterar exemplar de outra giroteca", async () => {
@@ -111,5 +125,98 @@ test("mudarStatus() gestor não pode alterar exemplar de outra giroteca", async 
   });
   await expect(
     mudarStatus(exemplar.id, "baixado", "Perdido", ctxGestorA),
+  ).rejects.toMatchObject({ status_code: 403 });
+});
+
+// ─── listarPorLivroNaGiroteca ─────────────────────────────────────────────────
+
+test("listarPorLivroNaGiroteca() gestor vê apenas exemplares da própria giroteca", async () => {
+  const livro = await criarLivro();
+  const girotecaC = await criarGiroteca({ codigo: "C001", nome: "Giroteca C" });
+  await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "A-001" });
+  await criarExemplar(livro.id, girotecaC.id, { codigoTombamento: "C-001" });
+
+  const lista = await listarPorLivroNaGiroteca(livro.id, ctxGestorA);
+
+  expect(lista).toHaveLength(1);
+  expect(lista[0].codigoTombamento).toBe("A-001");
+});
+
+test("listarPorLivroNaGiroteca() exemplar disponível tem nomeLeitor null", async () => {
+  const livro = await criarLivro();
+  await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "A-002" });
+
+  const lista = await listarPorLivroNaGiroteca(livro.id, ctxGestorA);
+
+  expect(lista[0].nomeLeitor).toBeNull();
+});
+
+test("listarPorLivroNaGiroteca() exemplar emprestado expõe nome do leitor", async () => {
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "A-003",
+    status: "emprestado",
+  });
+  const leitor = await criarLeitor(girotecaA.id, { nome: "Maria das Flores" });
+  const gestor = await criarUsuario({
+    papel: "gestor_giroteca",
+    girotecaId: girotecaA.id,
+  });
+  await criarEmprestimo(exemplar.id, leitor.id, gestor.id);
+
+  const lista = await listarPorLivroNaGiroteca(livro.id, ctxGestorA);
+
+  expect(lista[0].nomeLeitor).toBe("Maria das Flores");
+});
+
+test("listarPorLivroNaGiroteca() admin_nthe vê todas as girotecas", async () => {
+  const livro = await criarLivro();
+  const girotecaD = await criarGiroteca({ codigo: "D001", nome: "Giroteca D" });
+  await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "A-004" });
+  await criarExemplar(livro.id, girotecaD.id, { codigoTombamento: "D-004" });
+  const adminUser = await criarUsuario({
+    papel: "admin_nthe",
+    girotecaId: null,
+  });
+  const ctxAdmin = {
+    usuarioId: adminUser.id,
+    papel: "admin_nthe" as const,
+    girotecaId: null,
+  };
+
+  const lista = await listarPorLivroNaGiroteca(livro.id, ctxAdmin);
+
+  expect(lista).toHaveLength(2);
+});
+
+// ─── sugerirProximoCodigo ─────────────────────────────────────────────────────
+
+test("sugerirProximoCodigo() retorna '1' quando não há exemplares", async () => {
+  const proximo = await sugerirProximoCodigo(girotecaA.id, ctxGestorA);
+  expect(proximo).toBe("1");
+});
+
+test("sugerirProximoCodigo() incrementa o maior código numérico", async () => {
+  const livro = await criarLivro();
+  await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "3" });
+  await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "7" });
+
+  const proximo = await sugerirProximoCodigo(girotecaA.id, ctxGestorA);
+
+  expect(proximo).toBe("8");
+});
+
+test("sugerirProximoCodigo() ignora códigos não numéricos", async () => {
+  const livro = await criarLivro();
+  await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "ABC-001" });
+
+  const proximo = await sugerirProximoCodigo(girotecaA.id, ctxGestorA);
+
+  expect(proximo).toBe("1");
+});
+
+test("sugerirProximoCodigo() gestor não pode sugerir para outra giroteca", async () => {
+  await expect(
+    sugerirProximoCodigo(girotecaB.id, ctxGestorA),
   ).rejects.toMatchObject({ status_code: 403 });
 });
