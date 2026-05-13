@@ -1,4 +1,4 @@
-import { AppError } from "infra/errors";
+import { AppError, isDuplicateConstraint } from "infra/errors";
 import { createGirotecaSchema, parseBody } from "infra/schemas";
 import { contextoFromRequest } from "lib/contexto";
 import { criar, listarComContadores } from "models/girotecas";
@@ -40,8 +40,7 @@ export async function POST(request: Request) {
         { status: error.status_code },
       );
     }
-    const cause = (error as { cause?: { constraint?: string } }).cause;
-    if (cause?.constraint === "girotecas_codigo_unique") {
+    if (isDuplicateConstraint(error, "girotecas_codigo_unique")) {
       return Response.json(
         { error: "Já existe uma giroteca com este código." },
         { status: 409 },

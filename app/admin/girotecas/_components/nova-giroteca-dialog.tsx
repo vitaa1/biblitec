@@ -43,12 +43,16 @@ export function NovaGirotecaDialog() {
 
   function setField(field: keyof FormState, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
-    if (field === "codigo") setErro(null);
+    setErro(null);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.codigo.trim() || !form.nome.trim() || !form.escolaVinculada.trim())
+    if (
+      !form.codigo.trim() ||
+      !form.nome.trim() ||
+      !form.escolaVinculada.trim()
+    )
       return;
     setErro(null);
     setSalvando(true);
@@ -171,9 +175,7 @@ export function NovaGirotecaDialog() {
                 Cancelar
               </Button>
               <Button type="submit" disabled={!podeConfirmar}>
-                {salvando && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Criar giroteca
               </Button>
             </DialogFooter>

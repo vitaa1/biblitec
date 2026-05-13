@@ -1,4 +1,4 @@
-import { AppError } from "infra/errors";
+import { AppError, isDuplicateConstraint } from "infra/errors";
 import { createExemplarSchema, parseBody } from "infra/schemas";
 import { contextoFromRequest } from "lib/contexto";
 import { criarParaGiroteca, listarPorLivroNaGiroteca } from "models/exemplares";
@@ -59,8 +59,7 @@ export async function POST(request: Request, { params }: { params: Params }) {
         { status: error.status_code },
       );
     }
-    const cause = (error as { cause?: { constraint?: string } }).cause;
-    if (cause?.constraint === "exemplares_tombamento_giroteca_idx") {
+    if (isDuplicateConstraint(error, "exemplares_tombamento_giroteca_idx")) {
       return Response.json(
         { error: "Já existe um exemplar com este código nesta giroteca." },
         { status: 409 },
