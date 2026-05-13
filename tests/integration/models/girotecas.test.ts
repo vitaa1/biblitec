@@ -1,6 +1,14 @@
-import { atualizar, criar, listar } from "models/girotecas";
+import { atualizar, criar, listar, listarComContadores } from "models/girotecas";
 import type { Contexto } from "lib/auth";
-import { criarGiroteca, criarUsuario, limparBanco } from "tests/factories";
+import {
+  criarEmprestimo,
+  criarExemplar,
+  criarGiroteca,
+  criarLeitor,
+  criarLivro,
+  criarUsuario,
+  limparBanco,
+} from "tests/factories";
 
 let ctxAdmin: Contexto;
 let ctxGestor: Contexto;
@@ -66,4 +74,50 @@ test("atualizar() gestor não pode atualizar giroteca", async () => {
   await expect(
     atualizar(ctxGestor.girotecaId!, { nome: "Novo Nome" }, ctxGestor),
   ).rejects.toMatchObject({ status_code: 403 });
+});
+
+// ─── listarComContadores ──────────────────────────────────────────────────────
+
+test("listarComContadores() gestor não autorizado", async () => {
+  await expect(
+    listarComContadores(ctxGestor),
+  ).rejects.toMatchObject({ status_code: 403 });
+});
+
+test("listarComContadores() admin vê contadores corretos", async () => {
+  const girotecaId = ctxGestor.girotecaId!;
+  const livro = await criarLivro();
+  const exemplar1 = await criarExemplar(livro.id, girotecaId, {
+    codigoTombamento: "CNT-001",
+  });
+  const exemplar2 = await criarExemplar(livro.id, girotecaId, {
+    codigoTombamento: "CNT-002",
+    status: "emprestado",
+  });
+  const leitor = await criarLeitor(girotecaId);
+  await criarEmprestimo(exemplar2.id, leitor.id, ctxGestor.usuarioId);
+
+  const lista = await listarComContadores(ctxAdmin);
+  const g = lista.find((x) => x.id === girotecaId)!;
+
+  expect(g.totalExemplares).toBe(2);
+  expect(g.totalLeitores).toBe(1);
+  expect(g.totalEmprestimosAbertos).toBe(1);
+});
+
+test("listarComContadores() empréstimo devolvido não conta como aberto", async () => {
+  const girotecaId = ctxGestor.girotecaId!;
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaId, {
+    codigoTombamento: "CNT-003",
+  });
+  const leitor = await criarLeitor(girotecaId);
+  await criarEmprestimo(exemplar.id, leitor.id, ctxGestor.usuarioId, {
+    dataDevolucao: new Date(),
+  });
+
+  const lista = await listarComContadores(ctxAdmin);
+  const g = lista.find((x) => x.id === girotecaId)!;
+
+  expect(g.totalEmprestimosAbertos).toBe(0);
 });
