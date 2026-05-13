@@ -12,9 +12,12 @@ const ANO_MAX = new Date().getFullYear();
 const livroSchema = z.object({
   titulo: z.string().min(1, "Título é obrigatório."),
   autores: z.string().min(1, "Autores é obrigatório."),
-  categoria: z.enum(["Infantil", "Juvenil", "Didático", "Literatura", "Outros"], {
-    error: "Selecione uma categoria.",
-  }),
+  categoria: z.enum(
+    ["Infantil", "Juvenil", "Didático", "Literatura", "Outros"],
+    {
+      error: "Selecione uma categoria.",
+    },
+  ),
   capaUrl: z.string().url("URL inválida.").or(z.literal("")).optional(),
   isbn: z
     .string()

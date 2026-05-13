@@ -64,7 +64,9 @@ export default async function LivroDetalhePage({ params }: Props) {
 
             {/* Dados */}
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-bold text-gray-900">{livro.titulo}</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                {livro.titulo}
+              </h1>
               <p className="mt-1 text-sm text-gray-600">{livro.autores}</p>
               {livro.categoria && (
                 <span className="mt-2 inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
@@ -78,25 +80,33 @@ export default async function LivroDetalhePage({ params }: Props) {
           <dl className="divide-y divide-gray-100 border-t border-gray-100 px-6">
             {livro.isbn && (
               <div className="flex py-3">
-                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">ISBN</dt>
+                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">
+                  ISBN
+                </dt>
                 <dd className="text-sm text-gray-900">{livro.isbn}</dd>
               </div>
             )}
             {livro.editora && (
               <div className="flex py-3">
-                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">Editora</dt>
+                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">
+                  Editora
+                </dt>
                 <dd className="text-sm text-gray-900">{livro.editora}</dd>
               </div>
             )}
             {livro.anoPublicacao && (
               <div className="flex py-3">
-                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">Ano</dt>
+                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">
+                  Ano
+                </dt>
                 <dd className="text-sm text-gray-900">{livro.anoPublicacao}</dd>
               </div>
             )}
             {livro.descricao && (
               <div className="flex py-3">
-                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">Descrição</dt>
+                <dt className="w-36 flex-shrink-0 text-sm text-gray-500">
+                  Descrição
+                </dt>
                 <dd className="text-sm text-gray-900">{livro.descricao}</dd>
               </div>
             )}

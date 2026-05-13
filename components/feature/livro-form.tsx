@@ -59,7 +59,11 @@ interface LivroFormProps {
   submitLabel: string;
 }
 
-export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) {
+export function LivroForm({
+  action,
+  initialData,
+  submitLabel,
+}: LivroFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
   const [categoria, setCategoria] = useState(initialData?.categoria ?? "");
   const [capaUrl, setCapaUrl] = useState(initialData?.capaUrl ?? "");
@@ -80,6 +84,10 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
   async function buscarIsbn() {
     const isbnLimpo = isbn.replace(/-/g, "");
     if (!isbnLimpo) return;
+    if (!/^\d{10}$|^\d{13}$/.test(isbnLimpo)) {
+      setIsbnErro("ISBN inválido. Informe 10 ou 13 dígitos.");
+      return;
+    }
     setIsbnBuscando(true);
     setIsbnErro(null);
     try {
@@ -109,7 +117,10 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
       {/* Título */}
       <div className="space-y-1.5">
         <Label htmlFor="titulo">
-          Título <span className="text-red-500" aria-hidden="true">*</span>
+          Título{" "}
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
         </Label>
         <Input
           id="titulo"
@@ -131,7 +142,10 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
       {/* Autores */}
       <div className="space-y-1.5">
         <Label htmlFor="autores">
-          Autores <span className="text-red-500" aria-hidden="true">*</span>
+          Autores{" "}
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
         </Label>
         <Input
           id="autores"
@@ -152,7 +166,10 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
       {/* Categoria */}
       <div className="space-y-1.5">
         <Label htmlFor="categoria-trigger">
-          Categoria <span className="text-red-500" aria-hidden="true">*</span>
+          Categoria{" "}
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
         </Label>
         <input type="hidden" name="categoria" value={categoria} />
         <Select value={categoria} onValueChange={setCategoria}>
@@ -257,7 +274,11 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
                 </Button>
               </div>
               {(state.errors?.isbn || isbnErro) && (
-                <p id="isbn-error" className="text-sm text-red-600" role="alert">
+                <p
+                  id="isbn-error"
+                  className="text-sm text-red-600"
+                  role="alert"
+                >
                   {state.errors?.isbn?.[0] ?? isbnErro}
                 </p>
               )}

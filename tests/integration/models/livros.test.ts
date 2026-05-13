@@ -200,6 +200,28 @@ test("atualizar() ISBN duplicado lança AppError 409", async () => {
   ).rejects.toMatchObject({ status_code: 409 });
 });
 
+test("criar() persiste descricao", async () => {
+  const livro = await criar(
+    {
+      titulo: "Dom Casmurro",
+      autores: "Machado de Assis",
+      descricao: "Um romance de adultério e remorso.",
+    },
+    ctxAdmin,
+  );
+  expect(livro.descricao).toBe("Um romance de adultério e remorso.");
+});
+
+test("atualizar() altera descricao", async () => {
+  const livro = await criar({ titulo: "Livro", autores: "Autor" }, ctxAdmin);
+  const atualizado = await atualizar(
+    livro.id,
+    { descricao: "Nova descrição." },
+    ctxAdmin,
+  );
+  expect(atualizado.descricao).toBe("Nova descrição.");
+});
+
 test("atualizar() gestor não pode editar livro local de outra giroteca", async () => {
   const outraGiroteca = await criarGiroteca();
   const outroGestor = await criarUsuario({

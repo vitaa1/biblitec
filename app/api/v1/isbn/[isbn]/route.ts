@@ -9,7 +9,9 @@ export type IsbnLookupResult = {
   capaUrl?: string;
 };
 
-async function buscarOpenLibrary(isbn: string): Promise<IsbnLookupResult | null> {
+async function buscarOpenLibrary(
+  isbn: string,
+): Promise<IsbnLookupResult | null> {
   const res = await fetch(
     `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
     { next: { revalidate: 86400 } },
@@ -30,7 +32,8 @@ async function buscarOpenLibrary(isbn: string): Promise<IsbnLookupResult | null>
     ? Number(livro.publish_date.match(/\d{4}/)?.[0])
     : undefined;
 
-  const capaUrl = livro.cover?.large ?? livro.cover?.medium ?? livro.cover?.small;
+  const capaUrl =
+    livro.cover?.large ?? livro.cover?.medium ?? livro.cover?.small;
 
   return {
     titulo: livro.title || undefined,
@@ -42,7 +45,9 @@ async function buscarOpenLibrary(isbn: string): Promise<IsbnLookupResult | null>
   };
 }
 
-async function buscarGoogleBooks(isbn: string): Promise<IsbnLookupResult | null> {
+async function buscarGoogleBooks(
+  isbn: string,
+): Promise<IsbnLookupResult | null> {
   const res = await fetch(
     `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`,
     { next: { revalidate: 86400 } },

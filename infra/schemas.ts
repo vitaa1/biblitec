@@ -19,6 +19,7 @@ export const createLivroSchema = z.object({
   anoPublicacao: z.number().int().positive().optional(),
   categoria: categoriaLivroSchema.optional(),
   capaUrl: z.string().optional(),
+  descricao: z.string().optional(),
 });
 
 export const updateLivroSchema = createLivroSchema.partial();
