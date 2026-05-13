@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, Search } from "lucide-react";
+import type { IsbnLookupResult } from "app/api/v1/isbn/[isbn]/route";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +65,45 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
   const [capaUrl, setCapaUrl] = useState(initialData?.capaUrl ?? "");
   const [expanded, setExpanded] = useState(false);
 
+  // Campos controlados para serem preenchidos pelo ISBN lookup
+  const [titulo, setTitulo] = useState(initialData?.titulo ?? "");
+  const [autores, setAutores] = useState(initialData?.autores ?? "");
+  const [editora, setEditora] = useState(initialData?.editora ?? "");
+  const [anoPublicacao, setAnoPublicacao] = useState(
+    initialData?.anoPublicacao?.toString() ?? "",
+  );
+  const [descricao, setDescricao] = useState(initialData?.descricao ?? "");
+  const [isbn, setIsbn] = useState(initialData?.isbn ?? "");
+  const [isbnBuscando, setIsbnBuscando] = useState(false);
+  const [isbnErro, setIsbnErro] = useState<string | null>(null);
+
+  async function buscarIsbn() {
+    const isbnLimpo = isbn.replace(/-/g, "");
+    if (!isbnLimpo) return;
+    setIsbnBuscando(true);
+    setIsbnErro(null);
+    try {
+      const res = await fetch(`/api/v1/isbn/${isbnLimpo}`);
+      if (!res.ok) {
+        const body = await res.json();
+        setIsbnErro(body.error ?? "ISBN não encontrado.");
+        return;
+      }
+      const dados: IsbnLookupResult = await res.json();
+      if (dados.titulo && !titulo) setTitulo(dados.titulo);
+      if (dados.autores && !autores) setAutores(dados.autores);
+      if (dados.editora && !editora) setEditora(dados.editora);
+      if (dados.anoPublicacao && !anoPublicacao)
+        setAnoPublicacao(String(dados.anoPublicacao));
+      if (dados.descricao && !descricao) setDescricao(dados.descricao);
+      if (dados.capaUrl && !capaUrl) setCapaUrl(dados.capaUrl);
+    } catch {
+      setIsbnErro("Erro ao buscar o ISBN. Verifique sua conexão.");
+    } finally {
+      setIsbnBuscando(false);
+    }
+  }
+
   return (
     <form action={formAction} className="space-y-4">
       {/* Título */}
@@ -74,7 +114,8 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
         <Input
           id="titulo"
           name="titulo"
-          defaultValue={initialData?.titulo}
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
           autoFocus
           placeholder="Ex: Dom Casmurro"
           aria-describedby={state.errors?.titulo ? "titulo-error" : undefined}
@@ -95,7 +136,8 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
         <Input
           id="autores"
           name="autores"
-          defaultValue={initialData?.autores}
+          value={autores}
+          onChange={(e) => setAutores(e.target.value)}
           placeholder="Ex: Machado de Assis"
           aria-describedby={state.errors?.autores ? "autores-error" : undefined}
           aria-invalid={!!state.errors?.autores}
@@ -179,20 +221,44 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
             id="mais-informacoes"
             className="space-y-4 border-t border-gray-200 p-4"
           >
-            {/* ISBN */}
+            {/* ISBN + botão de busca */}
             <div className="space-y-1.5">
               <Label htmlFor="isbn">ISBN</Label>
-              <Input
-                id="isbn"
-                name="isbn"
-                defaultValue={initialData?.isbn ?? ""}
-                placeholder="10 ou 13 dígitos numéricos"
-                aria-describedby={state.errors?.isbn ? "isbn-error" : undefined}
-                aria-invalid={!!state.errors?.isbn}
-              />
-              {state.errors?.isbn && (
+              <div className="flex gap-2">
+                <Input
+                  id="isbn"
+                  name="isbn"
+                  value={isbn}
+                  onChange={(e) => {
+                    setIsbn(e.target.value);
+                    setIsbnErro(null);
+                  }}
+                  placeholder="10 ou 13 dígitos numéricos"
+                  aria-describedby={
+                    state.errors?.isbn || isbnErro ? "isbn-error" : undefined
+                  }
+                  aria-invalid={!!state.errors?.isbn || !!isbnErro}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={buscarIsbn}
+                  disabled={!isbn.trim() || isbnBuscando}
+                  className="flex-shrink-0"
+                  aria-label="Buscar dados pelo ISBN"
+                >
+                  {isbnBuscando ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="h-4 w-4" />
+                  )}
+                  <span className="ml-2 hidden sm:inline">Buscar dados</span>
+                </Button>
+              </div>
+              {(state.errors?.isbn || isbnErro) && (
                 <p id="isbn-error" className="text-sm text-red-600" role="alert">
-                  {state.errors.isbn[0]}
+                  {state.errors?.isbn?.[0] ?? isbnErro}
                 </p>
               )}
             </div>
@@ -203,7 +269,8 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
               <Input
                 id="editora"
                 name="editora"
-                defaultValue={initialData?.editora ?? ""}
+                value={editora}
+                onChange={(e) => setEditora(e.target.value)}
                 placeholder="Ex: Companhia das Letras"
                 aria-describedby={
                   state.errors?.editora ? "editora-error" : undefined
@@ -230,7 +297,8 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
                 type="number"
                 min={1450}
                 max={ANO_MAX}
-                defaultValue={initialData?.anoPublicacao ?? ""}
+                value={anoPublicacao}
+                onChange={(e) => setAnoPublicacao(e.target.value)}
                 placeholder={`Ex: ${ANO_MAX}`}
                 aria-describedby={
                   state.errors?.anoPublicacao
@@ -256,7 +324,8 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
               <Textarea
                 id="descricao"
                 name="descricao"
-                defaultValue={initialData?.descricao ?? ""}
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
                 placeholder="Resumo ou sinopse do livro"
                 rows={4}
                 aria-describedby={
