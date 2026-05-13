@@ -68,6 +68,22 @@ export const baixarExemplarSchema = z.object({
   }),
 });
 
+export const createGirotecaSchema = z.object({
+  codigo: z
+    .string()
+    .min(1, "Código é obrigatório.")
+    .max(50, "Código deve ter no máximo 50 caracteres."),
+  nome: z
+    .string()
+    .min(1, "Nome é obrigatório.")
+    .max(255, "Nome deve ter no máximo 255 caracteres."),
+  escolaVinculada: z
+    .string()
+    .min(1, "Escola vinculada é obrigatória.")
+    .max(255, "Escola vinculada deve ter no máximo 255 caracteres."),
+  endereco: z.string().optional(),
+});
+
 export function parseBody<T>(
   schema: z.ZodSchema<T>,
   data: unknown,
