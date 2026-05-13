@@ -19,7 +19,10 @@ export async function GET(request: Request, { params }: { params: Params }) {
       );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 
@@ -64,6 +67,9 @@ export async function POST(request: Request, { params }: { params: Params }) {
       );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

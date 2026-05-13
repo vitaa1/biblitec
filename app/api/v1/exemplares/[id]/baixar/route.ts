@@ -14,7 +14,12 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     if (!parsed.ok) {
       return Response.json({ error: parsed.error }, { status: 400 });
     }
-    const exemplar = await mudarStatus(id, "baixado", parsed.data.motivo, contexto);
+    const exemplar = await mudarStatus(
+      id,
+      "baixado",
+      parsed.data.motivo,
+      contexto,
+    );
     return Response.json(exemplar);
   } catch (error) {
     if (error instanceof AppError) {
@@ -24,6 +29,9 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
       );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

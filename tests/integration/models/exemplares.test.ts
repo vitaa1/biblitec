@@ -174,7 +174,10 @@ test("listarPorLivroNaGiroteca() admin_nthe vê todas as girotecas", async () =>
   const girotecaD = await criarGiroteca({ codigo: "D001", nome: "Giroteca D" });
   await criarExemplar(livro.id, girotecaA.id, { codigoTombamento: "A-004" });
   await criarExemplar(livro.id, girotecaD.id, { codigoTombamento: "D-004" });
-  const adminUser = await criarUsuario({ papel: "admin_nthe", girotecaId: null });
+  const adminUser = await criarUsuario({
+    papel: "admin_nthe",
+    girotecaId: null,
+  });
   const ctxAdmin = {
     usuarioId: adminUser.id,
     papel: "admin_nthe" as const,

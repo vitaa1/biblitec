@@ -59,9 +59,10 @@ export async function sugerirProximoCodigo(
 
   const [row] = await db
     .select({
-      proximo: sql<number>`COALESCE(MAX(CASE WHEN ${exemplares.codigoTombamento} ~ '^[0-9]+$' THEN CAST(${exemplares.codigoTombamento} AS INTEGER) ELSE NULL END), 0) + 1`.mapWith(
-        Number,
-      ),
+      proximo:
+        sql<number>`COALESCE(MAX(CASE WHEN ${exemplares.codigoTombamento} ~ '^[0-9]+$' THEN CAST(${exemplares.codigoTombamento} AS INTEGER) ELSE NULL END), 0) + 1`.mapWith(
+          Number,
+        ),
     })
     .from(exemplares)
     .where(eq(exemplares.girotecaId, girotecaId));
@@ -149,10 +150,7 @@ export async function mudarStatus(
       .from(emprestimos)
       .innerJoin(leitores, eq(leitores.id, emprestimos.leitorId))
       .where(
-        and(
-          eq(emprestimos.exemplarId, id),
-          isNull(emprestimos.dataDevolucao),
-        ),
+        and(eq(emprestimos.exemplarId, id), isNull(emprestimos.dataDevolucao)),
       );
     const nome = emprestimoAberto?.nomeLeitor ?? "um leitor";
     throw new AppError(
