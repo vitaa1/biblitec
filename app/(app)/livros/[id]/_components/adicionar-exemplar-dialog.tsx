@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,32 +38,29 @@ export function AdicionarExemplarDialog({ livroId, girotecaId }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [codigo, setCodigo] = useState("");
-  const [estado, setEstado] = useState<"novo" | "bom" | "regular" | "danificado">("bom");
+  const [estado, setEstado] = useState<
+    "novo" | "bom" | "regular" | "danificado"
+  >("bom");
   const [observacoes, setObservacoes] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const codigoRef = useRef<HTMLInputElement>(null);
 
-  const carregarSugestao = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/v1/exemplares/proximo-codigo?girotecaId=${girotecaId}`,
-      );
-      if (res.ok) {
-        const { proximo } = await res.json();
-        setCodigo(proximo);
-      }
-    } catch {
-      // silencioso — campo fica vazio para digitação manual
-    }
-  }, [girotecaId]);
-
   useEffect(() => {
     if (!open) return;
-    carregarSugestao();
+    let active = true;
+    fetch(`/api/v1/exemplares/proximo-codigo?girotecaId=${girotecaId}`)
+      .then((res) => res.ok && res.json())
+      .then((data) => {
+        if (active && data?.proximo) setCodigo(data.proximo);
+      })
+      .catch(() => {});
     const t = setTimeout(() => codigoRef.current?.select(), 80);
-    return () => clearTimeout(t);
-  }, [open, carregarSugestao]);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [open, girotecaId]);
 
   function resetForm(novoCodigo?: string) {
     setCodigo(novoCodigo ?? "");
@@ -101,8 +98,18 @@ export function AdicionarExemplarDialog({ livroId, girotecaId }: Props) {
       } else {
         const n = parseInt(codigo.trim(), 10);
         const proxCodigo = !isNaN(n) ? String(n + 1) : "";
-        resetForm(proxCodigo);
-        if (!proxCodigo) await carregarSugestao();
+        if (proxCodigo) {
+          resetForm(proxCodigo);
+        } else {
+          await fetch(
+            `/api/v1/exemplares/proximo-codigo?girotecaId=${girotecaId}`,
+          )
+            .then((r) => r.ok && r.json())
+            .then((data) => {
+              resetForm(data?.proximo ?? "");
+            })
+            .catch(() => resetForm(""));
+        }
         setTimeout(() => codigoRef.current?.select(), 80);
       }
     } finally {
@@ -184,7 +191,11 @@ export function AdicionarExemplarDialog({ livroId, girotecaId }: Props) {
             </div>
 
             {erro && (
-              <p id="exemplar-erro" className="text-sm text-red-600" role="alert">
+              <p
+                id="exemplar-erro"
+                className="text-sm text-red-600"
+                role="alert"
+              >
                 {erro}
               </p>
             )}
