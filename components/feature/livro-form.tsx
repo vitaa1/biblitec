@@ -61,6 +61,7 @@ interface LivroFormProps {
 export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) {
   const [state, formAction, isPending] = useActionState(action, {});
   const [categoria, setCategoria] = useState(initialData?.categoria ?? "");
+  const [capaUrl, setCapaUrl] = useState(initialData?.capaUrl ?? "");
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -145,7 +146,8 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
           id="capaUrl"
           name="capaUrl"
           type="url"
-          defaultValue={initialData?.capaUrl ?? ""}
+          value={capaUrl}
+          onChange={(e) => setCapaUrl(e.target.value)}
           placeholder="https://exemplo.com/capa.jpg"
           aria-describedby={state.errors?.capaUrl ? "capaUrl-error" : undefined}
           aria-invalid={!!state.errors?.capaUrl}
@@ -185,9 +187,7 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
                 name="isbn"
                 defaultValue={initialData?.isbn ?? ""}
                 placeholder="10 ou 13 dígitos numéricos"
-                aria-describedby={
-                  state.errors?.isbn ? "isbn-error" : undefined
-                }
+                aria-describedby={state.errors?.isbn ? "isbn-error" : undefined}
                 aria-invalid={!!state.errors?.isbn}
               />
               {state.errors?.isbn && (
@@ -233,7 +233,9 @@ export function LivroForm({ action, initialData, submitLabel }: LivroFormProps) 
                 defaultValue={initialData?.anoPublicacao ?? ""}
                 placeholder={`Ex: ${ANO_MAX}`}
                 aria-describedby={
-                  state.errors?.anoPublicacao ? "anoPublicacao-error" : undefined
+                  state.errors?.anoPublicacao
+                    ? "anoPublicacao-error"
+                    : undefined
                 }
                 aria-invalid={!!state.errors?.anoPublicacao}
               />
