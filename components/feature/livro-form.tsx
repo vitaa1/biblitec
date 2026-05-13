@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { ChevronDown, Loader2, Search } from "lucide-react";
-import type { IsbnLookupResult } from "app/api/v1/isbn/[isbn]/route";
+import type { IsbnLookupResult } from "lib/isbn";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,6 +105,8 @@ export function LivroForm({
         setAnoPublicacao(String(dados.anoPublicacao));
       if (dados.descricao && !descricao) setDescricao(dados.descricao);
       if (dados.capaUrl && !capaUrl) setCapaUrl(dados.capaUrl);
+      if (dados.editora || dados.anoPublicacao || dados.descricao)
+        setExpanded(true);
     } catch {
       setIsbnErro("Erro ao buscar o ISBN. Verifique sua conexão.");
     } finally {
@@ -198,6 +200,48 @@ export function LivroForm({
         )}
       </div>
 
+      {/* ISBN + botão de busca */}
+      <div className="space-y-1.5">
+        <Label htmlFor="isbn">ISBN</Label>
+        <div className="flex gap-2">
+          <Input
+            id="isbn"
+            name="isbn"
+            value={isbn}
+            onChange={(e) => {
+              setIsbn(e.target.value.replace(/-/g, ""));
+              setIsbnErro(null);
+            }}
+            placeholder="10 ou 13 dígitos numéricos"
+            aria-describedby={
+              state.errors?.isbn || isbnErro ? "isbn-error" : undefined
+            }
+            aria-invalid={!!state.errors?.isbn || !!isbnErro}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={buscarIsbn}
+            disabled={!isbn.trim() || isbnBuscando}
+            className="flex-shrink-0"
+            aria-label="Buscar dados pelo ISBN"
+          >
+            {isbnBuscando ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            <span className="ml-2 hidden sm:inline">Buscar dados</span>
+          </Button>
+        </div>
+        {(state.errors?.isbn || isbnErro) && (
+          <p id="isbn-error" className="text-sm text-red-600" role="alert">
+            {state.errors?.isbn?.[0] ?? isbnErro}
+          </p>
+        )}
+      </div>
+
       {/* Capa */}
       <div className="space-y-1.5">
         <Label htmlFor="capaUrl">URL da capa</Label>
@@ -238,52 +282,6 @@ export function LivroForm({
             id="mais-informacoes"
             className="space-y-4 border-t border-gray-200 p-4"
           >
-            {/* ISBN + botão de busca */}
-            <div className="space-y-1.5">
-              <Label htmlFor="isbn">ISBN</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="isbn"
-                  name="isbn"
-                  value={isbn}
-                  onChange={(e) => {
-                    setIsbn(e.target.value.replace(/-/g, ""));
-                    setIsbnErro(null);
-                  }}
-                  placeholder="10 ou 13 dígitos numéricos"
-                  aria-describedby={
-                    state.errors?.isbn || isbnErro ? "isbn-error" : undefined
-                  }
-                  aria-invalid={!!state.errors?.isbn || !!isbnErro}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={buscarIsbn}
-                  disabled={!isbn.trim() || isbnBuscando}
-                  className="flex-shrink-0"
-                  aria-label="Buscar dados pelo ISBN"
-                >
-                  {isbnBuscando ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Search className="h-4 w-4" />
-                  )}
-                  <span className="ml-2 hidden sm:inline">Buscar dados</span>
-                </Button>
-              </div>
-              {(state.errors?.isbn || isbnErro) && (
-                <p
-                  id="isbn-error"
-                  className="text-sm text-red-600"
-                  role="alert"
-                >
-                  {state.errors?.isbn?.[0] ?? isbnErro}
-                </p>
-              )}
-            </div>
-
             {/* Editora */}
             <div className="space-y-1.5">
               <Label htmlFor="editora">Editora</Label>

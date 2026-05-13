@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { IsbnLookupResult } from "lib/isbn";
 
-export type IsbnLookupResult = {
-  titulo?: string;
-  autores?: string;
-  editora?: string;
-  anoPublicacao?: number;
-  descricao?: string;
-  capaUrl?: string;
-};
+export type { IsbnLookupResult };
 
-async function buscarBrasilApi(
-  isbn: string,
-): Promise<IsbnLookupResult | null> {
+async function buscarBrasilApi(isbn: string): Promise<IsbnLookupResult | null> {
   try {
     const res = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`, {
       next: { revalidate: 86400 },
@@ -66,7 +58,12 @@ async function buscarOpenLibrary(
       autores: autores || undefined,
       editora: livro.publishers?.[0]?.name || undefined,
       anoPublicacao: ano && !isNaN(ano) ? ano : undefined,
-      descricao: livro.notes?.value || livro.notes || undefined,
+      descricao:
+        typeof livro.notes?.value === "string"
+          ? livro.notes.value
+          : typeof livro.notes === "string"
+            ? livro.notes
+            : undefined,
       capaUrl: capaUrl || undefined,
     };
   } catch {
@@ -96,9 +93,12 @@ async function buscarGoogleBooks(
       titulo: item.title || undefined,
       autores: item.authors?.join(", ") || undefined,
       editora: item.publisher || undefined,
-      anoPublicacao: item.publishedDate
-        ? Number(item.publishedDate.slice(0, 4))
-        : undefined,
+      anoPublicacao: (() => {
+        const ano = item.publishedDate
+          ? Number(item.publishedDate.slice(0, 4))
+          : undefined;
+        return Number.isFinite(ano) ? ano : undefined;
+      })(),
       descricao: item.description || undefined,
       capaUrl: capaUrl || undefined,
     };

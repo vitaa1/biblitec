@@ -68,6 +68,7 @@ export async function buscarComFiltros(
       anoPublicacao: livros.anoPublicacao,
       categoria: livros.categoria,
       capaUrl: livros.capaUrl,
+      descricao: livros.descricao,
       origem: livros.origem,
       criadoPorGirotecaId: livros.criadoPorGirotecaId,
       criadoEm: livros.criadoEm,
@@ -83,7 +84,7 @@ export async function buscarComFiltros(
     .limit(lim)
     .offset(offset);
 
-  return { livros: rows as LivroComExemplares[], total: Number(total) };
+  return { livros: rows, total: Number(total) };
 }
 
 export async function listarPorIsbn(isbn: string): Promise<Livro | null> {

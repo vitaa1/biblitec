@@ -18,7 +18,7 @@ const livroSchema = z.object({
       error: "Selecione uma categoria.",
     },
   ),
-  capaUrl: z.string().url("URL inválida.").or(z.literal("")).optional(),
+  capaUrl: z.url("URL inválida.").optional(),
   isbn: z
     .string()
     .regex(/^\d{10}$|^\d{13}$/, "ISBN inválido. Informe 10 ou 13 dígitos.")
@@ -64,6 +64,7 @@ export async function criarLivroAction(
   }
 
   const dados = parsed.data;
+  let livroId: string;
 
   try {
     const contexto = await contextoFromServerComponent();
@@ -80,13 +81,15 @@ export async function criarLivroAction(
       },
       contexto,
     );
-    redirect(`/livros/${livro.id}`);
+    livroId = livro.id;
   } catch (err) {
     if (err instanceof AppError) {
       return { errors: { _form: [err.message] } };
     }
     throw err;
   }
+
+  redirect(`/livros/${livroId}`);
 }
 
 export async function editarLivroAction(
@@ -101,6 +104,10 @@ export async function editarLivroAction(
   }
 
   const dados = parsed.data;
+
+  if (!z.string().uuid().safeParse(id).success) {
+    return { errors: { _form: ["ID de livro inválido."] } };
+  }
 
   try {
     const contexto = await contextoFromServerComponent();
@@ -118,11 +125,12 @@ export async function editarLivroAction(
       },
       contexto,
     );
-    redirect(`/livros/${id}`);
   } catch (err) {
     if (err instanceof AppError) {
       return { errors: { _form: [err.message] } };
     }
     throw err;
   }
+
+  redirect(`/livros/${id}`);
 }
