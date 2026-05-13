@@ -7,3 +7,11 @@ export class AppError extends Error {
     this.name = "AppError";
   }
 }
+
+export function isDuplicateConstraint(
+  error: unknown,
+  constraint: string,
+): boolean {
+  const cause = (error as { cause?: { constraint?: string } })?.cause;
+  return cause?.constraint === constraint;
+}
