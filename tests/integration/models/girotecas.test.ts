@@ -1,4 +1,9 @@
-import { atualizar, criar, listar, listarComContadores } from "models/girotecas";
+import {
+  atualizar,
+  criar,
+  listar,
+  listarComContadores,
+} from "models/girotecas";
 import type { Contexto } from "lib/auth";
 import {
   criarEmprestimo,
@@ -79,15 +84,15 @@ test("atualizar() gestor não pode atualizar giroteca", async () => {
 // ─── listarComContadores ──────────────────────────────────────────────────────
 
 test("listarComContadores() gestor não autorizado", async () => {
-  await expect(
-    listarComContadores(ctxGestor),
-  ).rejects.toMatchObject({ status_code: 403 });
+  await expect(listarComContadores(ctxGestor)).rejects.toMatchObject({
+    status_code: 403,
+  });
 });
 
 test("listarComContadores() admin vê contadores corretos", async () => {
   const girotecaId = ctxGestor.girotecaId!;
   const livro = await criarLivro();
-  const exemplar1 = await criarExemplar(livro.id, girotecaId, {
+  const _exemplar1 = await criarExemplar(livro.id, girotecaId, {
     codigoTombamento: "CNT-001",
   });
   const exemplar2 = await criarExemplar(livro.id, girotecaId, {
