@@ -11,11 +11,15 @@ export const categoriaLivroSchema = z.enum([
 export const createLivroSchema = z.object({
   titulo: z.string().min(1, "Título é obrigatório."),
   autores: z.string().min(1, "Autores é obrigatório."),
-  isbn: z.string().optional(),
+  isbn: z
+    .string()
+    .regex(/^\d{10}$|^\d{13}$/, "ISBN inválido. Informe 10 ou 13 dígitos.")
+    .optional(),
   editora: z.string().optional(),
   anoPublicacao: z.number().int().positive().optional(),
-  categoria: categoriaLivroSchema.optional(),
+  categoria: categoriaLivroSchema,
   capaUrl: z.string().optional(),
+  descricao: z.string().optional(),
 });
 
 export const updateLivroSchema = createLivroSchema.partial();

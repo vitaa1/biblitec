@@ -31,7 +31,11 @@ async function criarLivroViaApi(c: string) {
   const res = await fetch("http://localhost:3000/api/v1/livros", {
     method: "POST",
     headers: { "Content-Type": "application/json", Cookie: c },
-    body: JSON.stringify({ titulo: "Clean Code", autores: "Robert Martin" }),
+    body: JSON.stringify({
+      titulo: "Clean Code",
+      autores: "Robert Martin",
+      categoria: "Outros",
+    }),
   });
   if (!res.ok) throw new Error(`Falha ao criar livro: ${res.status}`);
   return res.json();

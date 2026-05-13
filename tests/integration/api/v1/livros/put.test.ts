@@ -26,6 +26,7 @@ async function criarLivroViaApi(c: string) {
       titulo: "Clean Code",
       autores: "Robert Martin",
       isbn: "9780132350884",
+      categoria: "Outros",
     }),
   });
   if (!res.ok) throw new Error(`Falha ao criar livro: ${res.status}`);

@@ -68,6 +68,7 @@ export async function buscarComFiltros(
       anoPublicacao: livros.anoPublicacao,
       categoria: livros.categoria,
       capaUrl: livros.capaUrl,
+      descricao: livros.descricao,
       origem: livros.origem,
       criadoPorGirotecaId: livros.criadoPorGirotecaId,
       criadoEm: livros.criadoEm,
@@ -83,7 +84,7 @@ export async function buscarComFiltros(
     .limit(lim)
     .offset(offset);
 
-  return { livros: rows as LivroComExemplares[], total: Number(total) };
+  return { livros: rows, total: Number(total) };
 }
 
 export async function listarPorIsbn(isbn: string): Promise<Livro | null> {
@@ -98,11 +99,12 @@ export async function criar(
   input: {
     titulo: string;
     autores: string;
+    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     isbn?: string;
     editora?: string;
     anoPublicacao?: number;
-    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     capaUrl?: string;
+    descricao?: string;
   },
   contexto: Contexto,
 ): Promise<Livro> {
@@ -129,11 +131,12 @@ export async function atualizar(
   input: {
     titulo?: string;
     autores?: string;
+    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     isbn?: string;
     editora?: string;
     anoPublicacao?: number;
-    categoria?: "Infantil" | "Juvenil" | "Didático" | "Literatura" | "Outros";
     capaUrl?: string;
+    descricao?: string;
   },
   contexto: Contexto,
 ): Promise<Livro> {

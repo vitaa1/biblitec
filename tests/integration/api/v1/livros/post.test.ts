@@ -26,6 +26,7 @@ test("POST /api/v1/livros cria livro e retorna 201", async () => {
       titulo: "Clean Code",
       autores: "Robert Martin",
       isbn: "9780132350884",
+      categoria: "Outros",
     }),
   });
 
@@ -53,6 +54,7 @@ test("POST /api/v1/livros ISBN duplicado retorna 409", async () => {
     titulo: "Clean Code",
     autores: "Robert Martin",
     isbn: "9780132350884",
+    categoria: "Outros",
   };
 
   await fetch("http://localhost:3000/api/v1/livros", {

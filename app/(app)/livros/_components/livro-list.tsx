@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LivroComExemplares } from "models/livros";
 import { LivroListItem } from "./livro-list-item";
@@ -91,11 +93,19 @@ export function LivroList({ initialData }: LivroListProps) {
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Catálogo</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Localize livros pelo título, autor ou ISBN
-          </p>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Catálogo</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Localize livros pelo título, autor ou ISBN
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/livros/novo">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo livro
+            </Link>
+          </Button>
         </div>
 
         {/* Busca */}
