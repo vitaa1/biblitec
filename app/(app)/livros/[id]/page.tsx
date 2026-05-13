@@ -5,6 +5,7 @@ import { ArrowLeft, Pencil, BookOpen } from "lucide-react";
 import { buscarPorId } from "models/livros";
 import { contextoFromServerComponent } from "lib/contexto";
 import { Button } from "@/components/ui/button";
+import { ExemplaresSection } from "./_components/exemplares-section";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -112,6 +113,8 @@ export default async function LivroDetalhePage({ params }: Props) {
             )}
           </dl>
         </div>
+
+        <ExemplaresSection livroId={id} />
       </div>
     </div>
   );
