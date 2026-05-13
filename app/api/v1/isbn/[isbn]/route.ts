@@ -54,8 +54,6 @@ async function buscarOpenLibrary(
       ?.map((a: { name: string }) => a.name)
       .join(", ");
 
-    const editora = livro.publishers?.[0]?.name;
-
     const ano = livro.publish_date
       ? Number(livro.publish_date.match(/\d{4}/)?.[0])
       : undefined;
@@ -66,7 +64,7 @@ async function buscarOpenLibrary(
     return {
       titulo: livro.title || undefined,
       autores: autores || undefined,
-      editora: editora || undefined,
+      editora: livro.publishers?.[0]?.name || undefined,
       anoPublicacao: ano && !isNaN(ano) ? ano : undefined,
       descricao: livro.notes?.value || livro.notes || undefined,
       capaUrl: capaUrl || undefined,
@@ -123,17 +121,31 @@ export async function GET(
     );
   }
 
-  const resultado =
-    (await buscarBrasilApi(isbnLimpo)) ??
-    (await buscarOpenLibrary(isbnLimpo)) ??
-    (await buscarGoogleBooks(isbnLimpo));
+  // Consulta as 3 fontes em paralelo e mescla o melhor de cada uma.
+  // BrasilAPI tem prioridade para texto (melhor cobertura de livros nacionais),
+  // mas a capa vem de qualquer fonte que a tenha.
+  const [brasil, openLib, google] = await Promise.all([
+    buscarBrasilApi(isbnLimpo),
+    buscarOpenLibrary(isbnLimpo),
+    buscarGoogleBooks(isbnLimpo),
+  ]);
 
-  if (!resultado) {
+  if (!brasil && !openLib && !google) {
     return NextResponse.json(
       { error: "ISBN não encontrado em nenhuma fonte." },
       { status: 404 },
     );
   }
+
+  const resultado: IsbnLookupResult = {
+    titulo: brasil?.titulo ?? openLib?.titulo ?? google?.titulo,
+    autores: brasil?.autores ?? openLib?.autores ?? google?.autores,
+    editora: brasil?.editora ?? openLib?.editora ?? google?.editora,
+    anoPublicacao:
+      brasil?.anoPublicacao ?? openLib?.anoPublicacao ?? google?.anoPublicacao,
+    descricao: brasil?.descricao ?? openLib?.descricao ?? google?.descricao,
+    capaUrl: brasil?.capaUrl ?? openLib?.capaUrl ?? google?.capaUrl,
+  };
 
   return NextResponse.json(resultado);
 }
