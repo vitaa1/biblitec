@@ -247,7 +247,7 @@ export function LivroForm({
                   name="isbn"
                   value={isbn}
                   onChange={(e) => {
-                    setIsbn(e.target.value);
+                    setIsbn(e.target.value.replace(/-/g, ""));
                     setIsbnErro(null);
                   }}
                   placeholder="10 ou 13 dígitos numéricos"

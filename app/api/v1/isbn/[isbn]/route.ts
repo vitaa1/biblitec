@@ -9,69 +9,104 @@ export type IsbnLookupResult = {
   capaUrl?: string;
 };
 
+async function buscarBrasilApi(
+  isbn: string,
+): Promise<IsbnLookupResult | null> {
+  try {
+    const res = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`, {
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) return null;
+
+    const livro = await res.json();
+    const autores = Array.isArray(livro.authors)
+      ? livro.authors.join(", ")
+      : undefined;
+
+    return {
+      titulo: livro.title || undefined,
+      autores: autores || undefined,
+      editora: livro.publisher || undefined,
+      anoPublicacao: livro.year ? Number(livro.year) : undefined,
+      descricao: livro.synopsis || undefined,
+      capaUrl: livro.cover_url || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function buscarOpenLibrary(
   isbn: string,
 ): Promise<IsbnLookupResult | null> {
-  const res = await fetch(
-    `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
-    { next: { revalidate: 86400 } },
-  );
-  if (!res.ok) return null;
+  try {
+    const res = await fetch(
+      `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
+      { next: { revalidate: 86400 } },
+    );
+    if (!res.ok) return null;
 
-  const json = await res.json();
-  const livro = json[`ISBN:${isbn}`];
-  if (!livro) return null;
+    const json = await res.json();
+    const livro = json[`ISBN:${isbn}`];
+    if (!livro) return null;
 
-  const autores = livro.authors
-    ?.map((a: { name: string }) => a.name)
-    .join(", ");
+    const autores = livro.authors
+      ?.map((a: { name: string }) => a.name)
+      .join(", ");
 
-  const editora = livro.publishers?.[0]?.name;
+    const editora = livro.publishers?.[0]?.name;
 
-  const ano = livro.publish_date
-    ? Number(livro.publish_date.match(/\d{4}/)?.[0])
-    : undefined;
+    const ano = livro.publish_date
+      ? Number(livro.publish_date.match(/\d{4}/)?.[0])
+      : undefined;
 
-  const capaUrl =
-    livro.cover?.large ?? livro.cover?.medium ?? livro.cover?.small;
+    const capaUrl =
+      livro.cover?.large ?? livro.cover?.medium ?? livro.cover?.small;
 
-  return {
-    titulo: livro.title || undefined,
-    autores: autores || undefined,
-    editora: editora || undefined,
-    anoPublicacao: ano && !isNaN(ano) ? ano : undefined,
-    descricao: livro.notes?.value || livro.notes || undefined,
-    capaUrl: capaUrl || undefined,
-  };
+    return {
+      titulo: livro.title || undefined,
+      autores: autores || undefined,
+      editora: editora || undefined,
+      anoPublicacao: ano && !isNaN(ano) ? ano : undefined,
+      descricao: livro.notes?.value || livro.notes || undefined,
+      capaUrl: capaUrl || undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function buscarGoogleBooks(
   isbn: string,
 ): Promise<IsbnLookupResult | null> {
-  const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`,
-    { next: { revalidate: 86400 } },
-  );
-  if (!res.ok) return null;
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`,
+      { next: { revalidate: 86400 } },
+    );
+    if (!res.ok) return null;
 
-  const json = await res.json();
-  const item = json.items?.[0]?.volumeInfo;
-  if (!item) return null;
+    const json = await res.json();
+    const item = json.items?.[0]?.volumeInfo;
+    if (!item) return null;
 
-  const capaUrl =
-    item.imageLinks?.thumbnail?.replace("http://", "https://") ||
-    item.imageLinks?.smallThumbnail?.replace("http://", "https://");
+    const capaUrl =
+      item.imageLinks?.thumbnail?.replace("http://", "https://") ||
+      item.imageLinks?.smallThumbnail?.replace("http://", "https://");
 
-  return {
-    titulo: item.title || undefined,
-    autores: item.authors?.join(", ") || undefined,
-    editora: item.publisher || undefined,
-    anoPublicacao: item.publishedDate
-      ? Number(item.publishedDate.slice(0, 4))
-      : undefined,
-    descricao: item.description || undefined,
-    capaUrl: capaUrl || undefined,
-  };
+    return {
+      titulo: item.title || undefined,
+      autores: item.authors?.join(", ") || undefined,
+      editora: item.publisher || undefined,
+      anoPublicacao: item.publishedDate
+        ? Number(item.publishedDate.slice(0, 4))
+        : undefined,
+      descricao: item.description || undefined,
+      capaUrl: capaUrl || undefined,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(
@@ -89,6 +124,7 @@ export async function GET(
   }
 
   const resultado =
+    (await buscarBrasilApi(isbnLimpo)) ??
     (await buscarOpenLibrary(isbnLimpo)) ??
     (await buscarGoogleBooks(isbnLimpo));
 
