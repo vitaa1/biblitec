@@ -52,7 +52,10 @@ beforeEach(async () => {
 });
 
 async function criarCenarioEmprestimo() {
-  const livro = await criarLivro({ titulo: "Dom Casmurro", autores: "Machado" });
+  const livro = await criarLivro({
+    titulo: "Dom Casmurro",
+    autores: "Machado",
+  });
   const exemplar = await criarExemplar(livro.id, girotecaId);
   const leitor = await criarLeitor(girotecaId, { nome: "Ana Lúcia" });
   return { livro, exemplar, leitor };
@@ -197,4 +200,22 @@ test("POST /api/v1/loans erro de exemplar indisponível inclui code=EXEMPLAR_IND
   expect(res.status).toBe(409);
   const body = await res.json();
   expect(body.code).toBe("EXEMPLAR_INDISPONIVEL");
+});
+
+test("POST /api/v1/loans gestor não pode usar leitor de outra giroteca", async () => {
+  const outraGiroteca = await criarGiroteca();
+  const livro = await criarLivro({ titulo: "T", autores: "A" });
+  const exemplar = await criarExemplar(livro.id, girotecaId);
+  const leitorOutra = await criarLeitor(outraGiroteca.id, { nome: "Externo" });
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitorOutra.id,
+    }),
+  });
+
+  expect(res.status).toBe(403);
 });
