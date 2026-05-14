@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -134,6 +135,9 @@ export function AdicionarExemplarDialog({ livroId, girotecaId }: Props) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Adicionar exemplar</DialogTitle>
+            <DialogDescription className="sr-only">
+              Preencha o código de tombamento, estado e observações do exemplar.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">

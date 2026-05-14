@@ -3,11 +3,21 @@ import type { IsbnLookupResult } from "lib/isbn";
 
 export type { IsbnLookupResult };
 
+function fetchComTimeout(url: string, ms: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, {
+    next: { revalidate: 86400 },
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timer));
+}
+
 async function buscarBrasilApi(isbn: string): Promise<IsbnLookupResult | null> {
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`, {
-      next: { revalidate: 86400 },
-    });
+    const res = await fetchComTimeout(
+      `https://brasilapi.com.br/api/isbn/v1/${isbn}`,
+      4000,
+    );
     if (!res.ok) return null;
 
     const livro = await res.json();
@@ -32,9 +42,9 @@ async function buscarOpenLibrary(
   isbn: string,
 ): Promise<IsbnLookupResult | null> {
   try {
-    const res = await fetch(
+    const res = await fetchComTimeout(
       `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
-      { next: { revalidate: 86400 } },
+      4000,
     );
     if (!res.ok) return null;
 
@@ -75,9 +85,9 @@ async function buscarGoogleBooks(
   isbn: string,
 ): Promise<IsbnLookupResult | null> {
   try {
-    const res = await fetch(
+    const res = await fetchComTimeout(
       `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`,
-      { next: { revalidate: 86400 } },
+      4000,
     );
     if (!res.ok) return null;
 

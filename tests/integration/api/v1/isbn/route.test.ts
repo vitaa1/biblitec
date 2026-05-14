@@ -54,4 +54,4 @@ test("GET /api/v1/isbn ISBN com hifens é normalizado e aceito", async () => {
   );
   // Formato válido — pode retornar 200 ou 404 dependendo das APIs externas
   expect([200, 404]).toContain(res.status);
-});
+}, 15000);
