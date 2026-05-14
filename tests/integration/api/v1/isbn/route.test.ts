@@ -47,15 +47,11 @@ test("GET /api/v1/isbn ISBN com letras retorna 400", async () => {
   expect(res.status).toBe(400);
 });
 
-test(
-  "GET /api/v1/isbn ISBN com hifens é normalizado e aceito",
-  async () => {
-    const res = await fetch(
-      "http://localhost:3000/api/v1/isbn/978-85-359-1066-3",
-      { headers: { Cookie: adminCookie } },
-    );
-    // Formato válido — pode retornar 200 ou 404 dependendo das APIs externas
-    expect([200, 404]).toContain(res.status);
-  },
-  15000,
-);
+test("GET /api/v1/isbn ISBN com hifens é normalizado e aceito", async () => {
+  const res = await fetch(
+    "http://localhost:3000/api/v1/isbn/978-85-359-1066-3",
+    { headers: { Cookie: adminCookie } },
+  );
+  // Formato válido — pode retornar 200 ou 404 dependendo das APIs externas
+  expect([200, 404]).toContain(res.status);
+}, 15000);
