@@ -386,7 +386,8 @@ export async function buscarParaDevolucao(
         ),
       );
     if (!row) return { ok: false, code: "NAO_ENCONTRADO" };
-    if (row.status === "baixado") return { ok: false, code: "EXEMPLAR_BAIXADO" };
+    if (row.status === "baixado")
+      return { ok: false, code: "EXEMPLAR_BAIXADO" };
     if (row.status !== "emprestado")
       return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
     exemplarRow = row;
@@ -423,7 +424,7 @@ export async function buscarParaDevolucao(
       exemplar: {
         id: exemplarRow.id,
         codigoTombamento: exemplarRow.codigoTombamento,
-        estado: exemplarRow.estado as "novo" | "bom" | "regular" | "danificado",
+        estado: exemplarRow.estado,
       },
       livro: {
         titulo: dadosEmprestimo.tituloLivro,
