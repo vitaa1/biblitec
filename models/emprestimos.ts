@@ -7,7 +7,7 @@ import type { Contexto } from "lib/auth";
 export type Emprestimo = typeof emprestimos.$inferSelect;
 
 const MAX_EMPRESTIMOS_ATIVOS = 3;
-const MAX_RENOVACOES = 2;
+export const MAX_RENOVACOES = 2;
 const DIAS_PRAZO = 14;
 
 export async function criar(
