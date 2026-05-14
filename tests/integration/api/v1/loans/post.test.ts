@@ -147,10 +147,29 @@ test("POST /api/v1/loans rejeita data no passado", async () => {
   expect(body.error).toMatch(/Data de devolução fora do permitido/);
 });
 
+test("POST /api/v1/loans aceita dataPrevistaDevolucao exatamente hoje+60", async () => {
+  const { exemplar, leitor } = await criarCenarioEmprestimo();
+  const limite = new Date();
+  limite.setUTCDate(limite.getUTCDate() + 60);
+  const dataIso = limite.toISOString().slice(0, 10);
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitor.id,
+      dataPrevistaDevolucao: dataIso,
+    }),
+  });
+
+  expect(res.status).toBe(201);
+});
+
 test("POST /api/v1/loans rejeita data acima de hoje+60", async () => {
   const { exemplar, leitor } = await criarCenarioEmprestimo();
   const muitoLonge = new Date();
-  muitoLonge.setDate(muitoLonge.getDate() + 61);
+  muitoLonge.setUTCDate(muitoLonge.getUTCDate() + 61);
 
   const res = await fetch("http://localhost:3000/api/v1/loans", {
     method: "POST",
