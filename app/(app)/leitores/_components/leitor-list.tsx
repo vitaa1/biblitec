@@ -5,6 +5,7 @@ import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { LeitorComContadores } from "models/leitores";
+import { LeitorDialog } from "./leitor-dialog";
 
 interface RespostaApi {
   leitores: LeitorComContadores[];
@@ -15,9 +16,7 @@ interface RespostaApi {
 
 interface LeitorListProps {
   initialData: RespostaApi;
-  onNovoLeitor?: () => void;
-  onEditar?: (leitor: LeitorComContadores) => void;
-  onDesativar?: (leitor: LeitorComContadores) => void;
+  girotecaId: string;
 }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -26,12 +25,7 @@ const TIPO_LABEL: Record<string, string> = {
   funcionario: "Funcionário",
 };
 
-export function LeitorList({
-  initialData,
-  onNovoLeitor,
-  onEditar,
-  onDesativar,
-}: LeitorListProps) {
+export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
   const [dados, setDados] = useState<RespostaApi>(initialData);
   const [busca, setBusca] = useState("");
   const [page, setPage] = useState(1);
@@ -40,6 +34,11 @@ export function LeitorList({
   const abortRef = useRef<AbortController | null>(null);
   const isMounted = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [dialogAberto, setDialogAberto] = useState(false);
+  const [leitorEditando, setLeitorEditando] = useState<
+    LeitorComContadores | undefined
+  >(undefined);
 
   const fetchLeitores = useCallback(async (q: string, paginaAtiva: number) => {
     abortRef.current?.abort();
@@ -82,20 +81,32 @@ export function LeitorList({
     fetchLeitores(busca, page);
   }, [busca, page, fetchLeitores]);
 
-  const handleBusca = useCallback(
-    (valor: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        setBusca(valor);
-        setPage(1);
-      }, 300);
-    },
-    [],
-  );
+  const handleBusca = useCallback((valor: string) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setBusca(valor);
+      setPage(1);
+    }, 300);
+  }, []);
 
   const recarregar = useCallback(() => {
     fetchLeitores(busca, page);
   }, [busca, page, fetchLeitores]);
+
+  function abrirNovoLeitor() {
+    setLeitorEditando(undefined);
+    setDialogAberto(true);
+  }
+
+  function abrirEditar(leitor: LeitorComContadores) {
+    setLeitorEditando(leitor);
+    setDialogAberto(true);
+  }
+
+  function fecharDialog() {
+    setDialogAberto(false);
+    setLeitorEditando(undefined);
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -107,7 +118,7 @@ export function LeitorList({
               Gerencie os leitores da giroteca
             </p>
           </div>
-          <Button onClick={onNovoLeitor}>
+          <Button onClick={abrirNovoLeitor}>
             <Plus className="mr-2 h-4 w-4" />
             Novo leitor
           </Button>
@@ -238,7 +249,7 @@ export function LeitorList({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => onEditar?.(leitor)}
+                          onClick={() => abrirEditar(leitor)}
                         >
                           Editar
                         </Button>
@@ -246,7 +257,6 @@ export function LeitorList({
                           size="sm"
                           variant="outline"
                           className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                          onClick={() => onDesativar?.(leitor)}
                         >
                           Desativar
                         </Button>
@@ -289,8 +299,14 @@ export function LeitorList({
           )}
         </div>
       </div>
+
+      <LeitorDialog
+        open={dialogAberto}
+        onClose={fecharDialog}
+        onSuccess={recarregar}
+        girotecaId={girotecaId}
+        leitor={leitorEditando}
+      />
     </div>
   );
 }
-
-export type { LeitorListProps, RespostaApi };

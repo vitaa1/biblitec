@@ -20,6 +20,7 @@ export default async function LeitoresPage() {
         page: 1,
         totalPages,
       }}
+      girotecaId={contexto.girotecaId ?? ""}
     />
   );
 }
