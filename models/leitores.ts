@@ -1,4 +1,4 @@
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, count, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { db } from "db/index";
 import { leitores } from "db/schema";
 import { AppError } from "infra/errors";
@@ -6,37 +6,120 @@ import type { Contexto } from "lib/auth";
 
 export type Leitor = typeof leitores.$inferSelect;
 
+export type LeitorComContadores = Leitor & {
+  emprestimosEmAberto: number;
+  emprestimosAtrasados: number;
+};
+
+export type BuscarLeitoresInput = {
+  busca?: string;
+  girotecaId?: string;
+  page?: number;
+};
+
+export type CriarLeitorInput = {
+  girotecaId: string;
+  nome: string;
+  tipo?: "aluno" | "professor" | "funcionario";
+  matricula?: string | null;
+  turma?: string;
+  telefone?: string;
+  responsavel?: string;
+};
+
+export type AtualizarLeitorInput = {
+  nome?: string;
+  tipo?: "aluno" | "professor" | "funcionario";
+  matricula?: string | null;
+  turma?: string | null;
+  telefone?: string | null;
+  responsavel?: string | null;
+};
+
+export const LEITORES_POR_PAGINA = 50;
+
 export async function buscar(
-  opts: { busca?: string } = {},
+  filtros: BuscarLeitoresInput,
   contexto: Contexto,
-): Promise<Leitor[]> {
-  const conds = [];
+): Promise<{ leitores: LeitorComContadores[]; total: number }> {
+  const page = Math.max(1, filtros.page ?? 1);
+  const offset = (page - 1) * LEITORES_POR_PAGINA;
+
+  const conds: SQL[] = [eq(leitores.ativo, true)];
 
   if (contexto.papel !== "admin_nthe") {
     conds.push(eq(leitores.girotecaId, contexto.girotecaId!));
-  }
-  if (opts.busca) {
-    const t = `%${opts.busca.trim()}%`;
-    conds.push(or(ilike(leitores.nome, t), ilike(leitores.matricula, t))!);
+  } else if (filtros.girotecaId) {
+    conds.push(eq(leitores.girotecaId, filtros.girotecaId));
   }
 
-  return db
-    .select()
+  if (filtros.busca) {
+    const t = `%${filtros.busca.trim()}%`;
+    conds.push(
+      or(ilike(leitores.nome, t), ilike(leitores.matricula, t))! as SQL,
+    );
+  }
+
+  const where = and(...conds);
+
+  const [{ total }] = await db
+    .select({ total: count() })
     .from(leitores)
-    .where(conds.length ? and(...conds) : undefined)
-    .orderBy(leitores.nome);
+    .where(where);
+
+  const rows = await db
+    .select({
+      id: leitores.id,
+      girotecaId: leitores.girotecaId,
+      nome: leitores.nome,
+      matricula: leitores.matricula,
+      turma: leitores.turma,
+      tipo: leitores.tipo,
+      telefone: leitores.telefone,
+      responsavel: leitores.responsavel,
+      ativo: leitores.ativo,
+      criadoEm: leitores.criadoEm,
+      atualizadoEm: leitores.atualizadoEm,
+      emprestimosEmAberto: sql<number>`(
+        SELECT COUNT(*) FROM emprestimos e
+        WHERE e.leitor_id = leitores.id
+        AND e.data_devolucao IS NULL
+      )`.mapWith(Number),
+      emprestimosAtrasados: sql<number>`(
+        SELECT COUNT(*) FROM emprestimos e
+        WHERE e.leitor_id = leitores.id
+        AND e.data_devolucao IS NULL
+        AND e.data_prevista_devolucao < NOW()
+      )`.mapWith(Number),
+    })
+    .from(leitores)
+    .where(where)
+    .orderBy(leitores.nome)
+    .limit(LEITORES_POR_PAGINA)
+    .offset(offset);
+
+  return { leitores: rows, total };
+}
+
+export async function buscarPorId(
+  id: string,
+  contexto: Contexto,
+): Promise<Leitor> {
+  const [leitor] = await db.select().from(leitores).where(eq(leitores.id, id));
+  if (!leitor) throw new AppError("Leitor não encontrado.", 404);
+
+  if (
+    contexto.papel === "gestor_giroteca" &&
+    leitor.girotecaId !== contexto.girotecaId
+  ) {
+    throw new AppError("Não autorizado.", 403);
+  }
+
+  return leitor;
 }
 
 export async function criar(
-  input: {
-    girotecaId: string;
-    nome: string;
-    matricula?: string | null;
-    turma?: string;
-    tipo?: "aluno" | "professor" | "funcionario";
-    telefone?: string;
-    responsavel?: string;
-  },
+  input: CriarLeitorInput,
   contexto: Contexto,
 ): Promise<Leitor> {
   if (
@@ -44,6 +127,25 @@ export async function criar(
     input.girotecaId !== contexto.girotecaId
   ) {
     throw new AppError("Não autorizado.", 403);
+  }
+
+  if (input.matricula) {
+    const [existe] = await db
+      .select({ id: leitores.id })
+      .from(leitores)
+      .where(
+        and(
+          eq(leitores.girotecaId, input.girotecaId),
+          eq(leitores.matricula, input.matricula),
+        ),
+      );
+    if (existe) {
+      throw new AppError(
+        "Já existe um leitor com esta matrícula nesta giroteca.",
+        409,
+        "MATRICULA_DUPLICADA",
+      );
+    }
   }
 
   const [row] = await db
@@ -55,12 +157,7 @@ export async function criar(
 
 export async function atualizar(
   id: string,
-  input: {
-    nome?: string;
-    turma?: string;
-    telefone?: string;
-    responsavel?: string;
-  },
+  input: AtualizarLeitorInput,
   contexto: Contexto,
 ): Promise<Leitor> {
   const [existente] = await db
@@ -74,6 +171,25 @@ export async function atualizar(
     existente.girotecaId !== contexto.girotecaId
   ) {
     throw new AppError("Não autorizado.", 403);
+  }
+
+  if (input.matricula && input.matricula !== existente.matricula) {
+    const [existe] = await db
+      .select({ id: leitores.id })
+      .from(leitores)
+      .where(
+        and(
+          eq(leitores.girotecaId, existente.girotecaId),
+          eq(leitores.matricula, input.matricula),
+        ),
+      );
+    if (existe) {
+      throw new AppError(
+        "Já existe um leitor com esta matrícula nesta giroteca.",
+        409,
+        "MATRICULA_DUPLICADA",
+      );
+    }
   }
 
   const [updated] = await db
@@ -87,7 +203,7 @@ export async function atualizar(
 export async function desativar(
   id: string,
   contexto: Contexto,
-): Promise<Leitor> {
+): Promise<void> {
   const [existente] = await db
     .select()
     .from(leitores)
@@ -101,10 +217,8 @@ export async function desativar(
     throw new AppError("Não autorizado.", 403);
   }
 
-  const [updated] = await db
+  await db
     .update(leitores)
     .set({ ativo: false, atualizadoEm: new Date() })
-    .where(eq(leitores.id, id))
-    .returning();
-  return updated;
+    .where(eq(leitores.id, id));
 }
