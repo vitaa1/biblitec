@@ -1,6 +1,6 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "db/index";
-import { emprestimos, exemplares, leitores } from "db/schema";
+import { emprestimos, exemplares, leitores, livros } from "db/schema";
 import { AppError } from "infra/errors";
 import type { Contexto } from "lib/auth";
 
@@ -123,6 +123,123 @@ export async function buscarPorTombamento(
       ),
     );
   return row ?? null;
+}
+
+export type ExemplarBuscado = {
+  exemplar: {
+    id: string;
+    codigoTombamento: string;
+    status: "disponivel" | "emprestado" | "baixado";
+    girotecaId: string;
+  };
+  livro: {
+    titulo: string;
+    autores: string;
+    capaUrl: string | null;
+  };
+  leitorAtual?: {
+    nome: string;
+    turma: string | null;
+    dataEmprestimo: Date;
+  };
+};
+
+const ISBN_REGEX = /^\d{10}$|^\d{13}$/;
+
+export async function buscarParaEmprestimo(
+  query: string,
+  contexto: Contexto,
+): Promise<ExemplarBuscado | null> {
+  if (contexto.papel !== "gestor_giroteca" || !contexto.girotecaId) {
+    throw new AppError("Admin não opera empréstimos diretamente.", 400);
+  }
+  const girotecaId = contexto.girotecaId;
+  const termo = query.trim();
+  if (!termo) return null;
+
+  let exemplarRow: typeof exemplares.$inferSelect | undefined;
+  let livroRow: typeof livros.$inferSelect | undefined;
+
+  if (ISBN_REGEX.test(termo)) {
+    [livroRow] = await db
+      .select()
+      .from(livros)
+      .where(and(eq(livros.isbn, termo), isNull(livros.deletadoEm)));
+    if (!livroRow) return null;
+
+    [exemplarRow] = await db
+      .select()
+      .from(exemplares)
+      .where(
+        and(
+          eq(exemplares.livroId, livroRow.id),
+          eq(exemplares.girotecaId, girotecaId),
+          eq(exemplares.status, "disponivel"),
+        ),
+      )
+      .limit(1);
+    if (!exemplarRow) return null;
+  } else {
+    [exemplarRow] = await db
+      .select()
+      .from(exemplares)
+      .where(
+        and(
+          eq(exemplares.codigoTombamento, termo),
+          eq(exemplares.girotecaId, girotecaId),
+        ),
+      );
+    if (!exemplarRow) return null;
+
+    [livroRow] = await db
+      .select()
+      .from(livros)
+      .where(eq(livros.id, exemplarRow.livroId));
+    if (!livroRow) return null;
+  }
+
+  const resultado: ExemplarBuscado = {
+    exemplar: {
+      id: exemplarRow.id,
+      codigoTombamento: exemplarRow.codigoTombamento,
+      status: exemplarRow.status as "disponivel" | "emprestado" | "baixado",
+      girotecaId: exemplarRow.girotecaId,
+    },
+    livro: {
+      titulo: livroRow.titulo,
+      autores: livroRow.autores,
+      capaUrl: livroRow.capaUrl,
+    },
+  };
+
+  if (exemplarRow.status === "emprestado") {
+    const [emprestimoAtivo] = await db
+      .select({
+        dataEmprestimo: emprestimos.dataEmprestimo,
+        nome: leitores.nome,
+        turma: leitores.turma,
+      })
+      .from(emprestimos)
+      .innerJoin(leitores, eq(emprestimos.leitorId, leitores.id))
+      .where(
+        and(
+          eq(emprestimos.exemplarId, exemplarRow.id),
+          isNull(emprestimos.dataDevolucao),
+        ),
+      )
+      .orderBy(desc(emprestimos.dataEmprestimo))
+      .limit(1);
+
+    if (emprestimoAtivo) {
+      resultado.leitorAtual = {
+        nome: emprestimoAtivo.nome,
+        turma: emprestimoAtivo.turma,
+        dataEmprestimo: emprestimoAtivo.dataEmprestimo,
+      };
+    }
+  }
+
+  return resultado;
 }
 
 export async function mudarStatus(
