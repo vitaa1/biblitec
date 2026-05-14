@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,13 +58,14 @@ function leitorParaForm(leitor: LeitorComContadores): FormState {
   };
 }
 
-export function LeitorDialog({
-  open,
-  onClose,
-  onSuccess,
-  girotecaId,
-  leitor,
-}: LeitorDialogProps) {
+interface FormProps {
+  onClose: () => void;
+  onSuccess: () => void;
+  girotecaId: string;
+  leitor?: LeitorComContadores;
+}
+
+function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
   const modoEdicao = Boolean(leitor);
   const [form, setForm] = useState<FormState>(
     leitor ? leitorParaForm(leitor) : FORM_VAZIO,
@@ -73,21 +74,13 @@ export function LeitorDialog({
   const [erroMatricula, setErroMatricula] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setForm(leitor ? leitorParaForm(leitor) : FORM_VAZIO);
-      setErroGeral(null);
-      setErroMatricula(null);
-    }
-  }, [open, leitor]);
-
   function setField<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [field]: value }));
     setErroGeral(null);
     if (field === "matricula") setErroMatricula(null);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!form.nome.trim()) return;
 
@@ -129,7 +122,9 @@ export function LeitorDialog({
       if (!res.ok) {
         const body = await res.json();
         if (body.code === "MATRICULA_DUPLICADA") {
-          setErroMatricula("Já existe um leitor com esta matrícula nesta giroteca.");
+          setErroMatricula(
+            "Já existe um leitor com esta matrícula nesta giroteca.",
+          );
         } else {
           setErroGeral(body.error ?? "Erro ao salvar leitor.");
         }
@@ -146,118 +141,132 @@ export function LeitorDialog({
   const podeConfirmar = Boolean(form.nome.trim()) && !salvando;
 
   return (
+    <form onSubmit={handleSubmit} className="space-y-4 py-2" noValidate>
+      <div className="space-y-1.5">
+        <Label htmlFor="leitor-nome">
+          Nome{" "}
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
+        </Label>
+        <Input
+          id="leitor-nome"
+          value={form.nome}
+          onChange={(e) => setField("nome", e.target.value)}
+          placeholder="Ex: Ana Lúcia"
+          required
+          autoFocus
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="leitor-tipo">Tipo</Label>
+        <Select
+          value={form.tipo}
+          onValueChange={(v) => setField("tipo", v as FormState["tipo"])}
+        >
+          <SelectTrigger id="leitor-tipo">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="aluno">Aluno</SelectItem>
+            <SelectItem value="professor">Professor</SelectItem>
+            <SelectItem value="funcionario">Funcionário</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="leitor-matricula">Matrícula</Label>
+        <Input
+          id="leitor-matricula"
+          value={form.matricula}
+          onChange={(e) => setField("matricula", e.target.value)}
+          placeholder="Opcional"
+          aria-invalid={!!erroMatricula}
+          aria-describedby={erroMatricula ? "leitor-matricula-erro" : undefined}
+        />
+        {erroMatricula && (
+          <p
+            id="leitor-matricula-erro"
+            className="text-sm text-red-600"
+            role="alert"
+          >
+            {erroMatricula}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="leitor-turma">Turma</Label>
+        <Input
+          id="leitor-turma"
+          value={form.turma}
+          onChange={(e) => setField("turma", e.target.value)}
+          placeholder="Ex: 5A"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="leitor-telefone">Telefone</Label>
+        <Input
+          id="leitor-telefone"
+          value={form.telefone}
+          onChange={(e) => setField("telefone", e.target.value)}
+          placeholder="Ex: (86) 99999-0000"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="leitor-responsavel">Responsável</Label>
+        <Input
+          id="leitor-responsavel"
+          value={form.responsavel}
+          onChange={(e) => setField("responsavel", e.target.value)}
+          placeholder="Nome do responsável (opcional)"
+        />
+      </div>
+
+      {erroGeral && (
+        <p className="text-sm text-red-600" role="alert">
+          {erroGeral}
+        </p>
+      )}
+
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={!podeConfirmar}>
+          {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {modoEdicao ? "Salvar alterações" : "Criar leitor"}
+        </Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+export function LeitorDialog({
+  open,
+  onClose,
+  onSuccess,
+  girotecaId,
+  leitor,
+}: LeitorDialogProps) {
+  return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {modoEdicao ? "Editar leitor" : "Novo leitor"}
-          </DialogTitle>
+          <DialogTitle>{leitor ? "Editar leitor" : "Novo leitor"}</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2" noValidate>
-          <div className="space-y-1.5">
-            <Label htmlFor="leitor-nome">
-              Nome{" "}
-              <span className="text-red-500" aria-hidden="true">
-                *
-              </span>
-            </Label>
-            <Input
-              id="leitor-nome"
-              value={form.nome}
-              onChange={(e) => setField("nome", e.target.value)}
-              placeholder="Ex: Ana Lúcia"
-              required
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="leitor-tipo">Tipo</Label>
-            <Select
-              value={form.tipo}
-              onValueChange={(v) =>
-                setField("tipo", v as FormState["tipo"])
-              }
-            >
-              <SelectTrigger id="leitor-tipo">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="aluno">Aluno</SelectItem>
-                <SelectItem value="professor">Professor</SelectItem>
-                <SelectItem value="funcionario">Funcionário</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="leitor-matricula">Matrícula</Label>
-            <Input
-              id="leitor-matricula"
-              value={form.matricula}
-              onChange={(e) => setField("matricula", e.target.value)}
-              placeholder="Opcional"
-              aria-invalid={!!erroMatricula}
-              aria-describedby={erroMatricula ? "leitor-matricula-erro" : undefined}
-            />
-            {erroMatricula && (
-              <p
-                id="leitor-matricula-erro"
-                className="text-sm text-red-600"
-                role="alert"
-              >
-                {erroMatricula}
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="leitor-turma">Turma</Label>
-            <Input
-              id="leitor-turma"
-              value={form.turma}
-              onChange={(e) => setField("turma", e.target.value)}
-              placeholder="Ex: 5A"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="leitor-telefone">Telefone</Label>
-            <Input
-              id="leitor-telefone"
-              value={form.telefone}
-              onChange={(e) => setField("telefone", e.target.value)}
-              placeholder="Ex: (86) 99999-0000"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="leitor-responsavel">Responsável</Label>
-            <Input
-              id="leitor-responsavel"
-              value={form.responsavel}
-              onChange={(e) => setField("responsavel", e.target.value)}
-              placeholder="Nome do responsável (opcional)"
-            />
-          </div>
-
-          {erroGeral && (
-            <p className="text-sm text-red-600" role="alert">
-              {erroGeral}
-            </p>
-          )}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={!podeConfirmar}>
-              {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {modoEdicao ? "Salvar alterações" : "Criar leitor"}
-            </Button>
-          </DialogFooter>
-        </form>
+        <LeitorForm
+          key={`${leitor?.id ?? "new"}-${String(open)}`}
+          onClose={onClose}
+          onSuccess={onSuccess}
+          girotecaId={girotecaId}
+          leitor={leitor}
+        />
       </DialogContent>
     </Dialog>
   );

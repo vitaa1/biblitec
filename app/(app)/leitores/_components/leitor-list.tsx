@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { LeitorComContadores } from "models/leitores";
 import { LeitorDialog } from "./leitor-dialog";
+import { DesativarLeitorDialog } from "./desativar-leitor-dialog";
 
 interface RespostaApi {
   leitores: LeitorComContadores[];
@@ -37,6 +38,10 @@ export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
 
   const [dialogAberto, setDialogAberto] = useState(false);
   const [leitorEditando, setLeitorEditando] = useState<
+    LeitorComContadores | undefined
+  >(undefined);
+  const [desativarAberto, setDesativarAberto] = useState(false);
+  const [leitorDesativando, setLeitorDesativando] = useState<
     LeitorComContadores | undefined
   >(undefined);
 
@@ -106,6 +111,16 @@ export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
   function fecharDialog() {
     setDialogAberto(false);
     setLeitorEditando(undefined);
+  }
+
+  function abrirDesativar(leitor: LeitorComContadores) {
+    setLeitorDesativando(leitor);
+    setDesativarAberto(true);
+  }
+
+  function fecharDesativar() {
+    setDesativarAberto(false);
+    setLeitorDesativando(undefined);
   }
 
   return (
@@ -257,6 +272,7 @@ export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
                           size="sm"
                           variant="outline"
                           className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => abrirDesativar(leitor)}
                         >
                           Desativar
                         </Button>
@@ -306,6 +322,13 @@ export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
         onSuccess={recarregar}
         girotecaId={girotecaId}
         leitor={leitorEditando}
+      />
+
+      <DesativarLeitorDialog
+        open={desativarAberto}
+        onClose={fecharDesativar}
+        onSuccess={recarregar}
+        leitor={leitorDesativando}
       />
     </div>
   );
