@@ -63,7 +63,10 @@ test("GET /api/v1/exemplares/buscar admin → 400", async () => {
 });
 
 test("GET /api/v1/exemplares/buscar tombamento disponível retorna dados completos", async () => {
-  const livro = await criarLivro({ titulo: "Dom Casmurro", autores: "Machado" });
+  const livro = await criarLivro({
+    titulo: "Dom Casmurro",
+    autores: "Machado",
+  });
   await criarExemplar(livro.id, girotecaId, { codigoTombamento: "T-001" });
 
   const res = await fetch(
