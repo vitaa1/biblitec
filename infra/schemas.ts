@@ -26,12 +26,21 @@ export const updateLivroSchema = createLivroSchema.partial();
 
 export const createLeitorSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório."),
-  matricula: z.string().min(1, "Matrícula é obrigatória."),
   girotecaId: z.uuid("girotecaId deve ser um UUID válido."),
-  turma: z.string().optional(),
   tipo: z.enum(["aluno", "professor", "funcionario"]).optional(),
+  matricula: z.string().optional(),
+  turma: z.string().optional(),
   telefone: z.string().optional(),
   responsavel: z.string().optional(),
+});
+
+export const updateLeitorSchema = z.object({
+  nome: z.string().min(1, "Nome é obrigatório.").optional(),
+  tipo: z.enum(["aluno", "professor", "funcionario"]).optional(),
+  matricula: z.string().optional().nullable(),
+  turma: z.string().optional().nullable(),
+  telefone: z.string().optional().nullable(),
+  responsavel: z.string().optional().nullable(),
 });
 
 export const createEmprestimoSchema = z.object({

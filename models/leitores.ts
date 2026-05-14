@@ -31,7 +31,7 @@ export async function criar(
   input: {
     girotecaId: string;
     nome: string;
-    matricula: string;
+    matricula?: string | null;
     turma?: string;
     tipo?: "aluno" | "professor" | "funcionario";
     telefone?: string;
