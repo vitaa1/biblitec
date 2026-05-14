@@ -115,7 +115,7 @@ export function LivroList({ initialData }: LivroListProps) {
 
         {/* Lista */}
         <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          {carregando ? (
+          {carregando && dados.livros.length === 0 ? (
             <LivroListSkeleton />
           ) : erro ? (
             <div className="px-4 py-12 text-center text-sm text-red-600">

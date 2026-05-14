@@ -27,6 +27,12 @@ export async function AppHeader() {
               Empréstimos
             </Link>
             <Link
+              href="/devolucoes"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Devoluções
+            </Link>
+            <Link
               href="/leitores"
               className="text-sm text-gray-600 hover:text-gray-900"
             >
