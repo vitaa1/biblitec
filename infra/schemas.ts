@@ -76,7 +76,8 @@ export const updateLeitorSchema = z.object({
 export const createEmprestimoSchema = z.object({
   exemplarId: z.uuid("exemplarId deve ser um UUID válido."),
   leitorId: z.uuid("leitorId deve ser um UUID válido."),
-  observacoes: z.string().optional(),
+  dataPrevistaDevolucao: z.coerce.date().optional(),
+  observacoes: z.string().max(500).optional(),
 });
 
 export const loginSchema = z.object({
