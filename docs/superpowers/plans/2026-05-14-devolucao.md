@@ -12,24 +12,25 @@
 
 ## Mapa de Arquivos
 
-| Arquivo | Ação |
-|---|---|
-| `models/emprestimos.ts` | Modificar — adicionar `buscarParaDevolucao()`, estender `devolver()` com `opcoes.estadoRetorno` |
-| `infra/schemas.ts` | Modificar — adicionar `devolverEmprestimoSchema` |
-| `app/api/v1/emprestimos/buscar-devolucao/route.ts` | Criar — endpoint de busca para devolução |
-| `app/api/v1/loans/[id]/route.ts` | Modificar — aceitar body com `estadoRetorno` |
-| `app/(app)/devolucoes/page.tsx` | Criar — Server Component |
-| `app/(app)/devolucoes/_components/devolucao-form.tsx` | Criar — Client Component |
-| `app/(app)/_components/header.tsx` | Modificar — adicionar link "Devoluções" |
-| `tests/integration/models/emprestimos.test.ts` | Modificar — novos casos para `devolver` e `buscarParaDevolucao` |
-| `tests/integration/api/v1/loans/patch.test.ts` | Modificar — casos `estadoRetorno` e autorização |
-| `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts` | Criar — testes do endpoint de busca |
+| Arquivo                                                         | Ação                                                                                            |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `models/emprestimos.ts`                                         | Modificar — adicionar `buscarParaDevolucao()`, estender `devolver()` com `opcoes.estadoRetorno` |
+| `infra/schemas.ts`                                              | Modificar — adicionar `devolverEmprestimoSchema`                                                |
+| `app/api/v1/emprestimos/buscar-devolucao/route.ts`              | Criar — endpoint de busca para devolução                                                        |
+| `app/api/v1/loans/[id]/route.ts`                                | Modificar — aceitar body com `estadoRetorno`                                                    |
+| `app/(app)/devolucoes/page.tsx`                                 | Criar — Server Component                                                                        |
+| `app/(app)/devolucoes/_components/devolucao-form.tsx`           | Criar — Client Component                                                                        |
+| `app/(app)/_components/header.tsx`                              | Modificar — adicionar link "Devoluções"                                                         |
+| `tests/integration/models/emprestimos.test.ts`                  | Modificar — novos casos para `devolver` e `buscarParaDevolucao`                                 |
+| `tests/integration/api/v1/loans/patch.test.ts`                  | Modificar — casos `estadoRetorno` e autorização                                                 |
+| `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts` | Criar — testes do endpoint de busca                                                             |
 
 ---
 
 ## Task 1: Issue e Branch
 
 **Files:**
+
 - (nenhum arquivo a editar)
 
 - [ ] **Passo 1: Criar issue no GitHub**
@@ -56,6 +57,7 @@ Substituir `NNN` pelo número real da issue.
 ## Task 2: Estender `devolver()` com `estadoRetorno` + schema Zod
 
 **Files:**
+
 - Modify: `models/emprestimos.ts`
 - Modify: `infra/schemas.ts`
 - Modify: `tests/integration/models/emprestimos.test.ts`
@@ -129,6 +131,7 @@ export const devolverEmprestimoSchema = z.object({
 Substituir a assinatura e o corpo de `devolver`:
 
 **Antes (linhas 147–189):**
+
 ```typescript
 export async function devolver(
   id: string,
@@ -147,6 +150,7 @@ export async function devolver(
 ```
 
 **Depois — função completa:**
+
 ```typescript
 export async function devolver(
   id: string,
@@ -231,6 +235,7 @@ EOF
 ## Task 3: Adicionar `buscarParaDevolucao()` em `models/emprestimos.ts`
 
 **Files:**
+
 - Modify: `models/emprestimos.ts`
 - Modify: `tests/integration/models/emprestimos.test.ts`
 
@@ -239,6 +244,7 @@ EOF
 Em `tests/integration/models/emprestimos.test.ts`, alterar o import de `models/emprestimos`:
 
 **Antes:**
+
 ```typescript
 import {
   criar,
@@ -250,6 +256,7 @@ import {
 ```
 
 **Depois:**
+
 ```typescript
 import {
   buscarParaDevolucao,
@@ -312,7 +319,10 @@ test("buscarParaDevolucao() por tombamento baixado retorna EXEMPLAR_BAIXADO", as
 });
 
 test("buscarParaDevolucao() por tombamento inexistente retorna NAO_ENCONTRADO", async () => {
-  const resultado = await buscarParaDevolucao("TOMBAMENTO-INEXISTENTE", ctxGestorA);
+  const resultado = await buscarParaDevolucao(
+    "TOMBAMENTO-INEXISTENTE",
+    ctxGestorA,
+  );
 
   expect(resultado).toEqual({ ok: false, code: "NAO_ENCONTRADO" });
 });
@@ -451,8 +461,10 @@ export async function buscarParaDevolucao(
         ),
       );
 
-    if (emprestados.length === 0) return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
-    if (emprestados.length > 1) return { ok: false, code: "MULTIPLOS_EMPRESTADOS" };
+    if (emprestados.length === 0)
+      return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
+    if (emprestados.length > 1)
+      return { ok: false, code: "MULTIPLOS_EMPRESTADOS" };
     exemplarRow = emprestados[0];
   } else {
     const [row] = await db
@@ -465,8 +477,10 @@ export async function buscarParaDevolucao(
         ),
       );
     if (!row) return { ok: false, code: "NAO_ENCONTRADO" };
-    if (row.status === "baixado") return { ok: false, code: "EXEMPLAR_BAIXADO" };
-    if (row.status !== "emprestado") return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
+    if (row.status === "baixado")
+      return { ok: false, code: "EXEMPLAR_BAIXADO" };
+    if (row.status !== "emprestado")
+      return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
     exemplarRow = row;
   }
 
@@ -550,6 +564,7 @@ EOF
 ## Task 4: Estender PATCH `/api/v1/loans/[id]` para aceitar `estadoRetorno`
 
 **Files:**
+
 - Modify: `app/api/v1/loans/[id]/route.ts`
 - Modify: `tests/integration/api/v1/loans/patch.test.ts`
 
@@ -762,6 +777,7 @@ EOF
 ## Task 5: Criar `GET /api/v1/emprestimos/buscar-devolucao`
 
 **Files:**
+
 - Create: `app/api/v1/emprestimos/buscar-devolucao/route.ts`
 - Create: `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts`
 
@@ -924,7 +940,10 @@ test("GET /api/v1/emprestimos/buscar-devolucao retorna 400 para admin", async ()
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
   });
-  const cookieAdmin = loginAdmin.headers.get("set-cookie")!.split(";")[0].trim();
+  const cookieAdmin = loginAdmin.headers
+    .get("set-cookie")!
+    .split(";")[0]
+    .trim();
 
   const res = await fetch(
     "http://localhost:3000/api/v1/emprestimos/buscar-devolucao?q=QUALQUER",
@@ -1046,6 +1065,7 @@ EOF
 ## Task 6: Criar `app/(app)/devolucoes/page.tsx` (Server Component)
 
 **Files:**
+
 - Create: `app/(app)/devolucoes/page.tsx`
 
 ### Passo 1: Criar o diretório e o arquivo
@@ -1093,6 +1113,7 @@ EOF
 ## Task 7: Criar `DevolucaoForm` (Client Component)
 
 **Files:**
+
 - Create: `app/(app)/devolucoes/_components/devolucao-form.tsx`
 
 ### Passo 1: Criar o componente completo
@@ -1551,6 +1572,7 @@ EOF
 ## Task 8: Atualizar Header e Verificação Final
 
 **Files:**
+
 - Modify: `app/(app)/_components/header.tsx`
 
 ### Passo 1: Adicionar link "Devoluções" na nav
@@ -1558,6 +1580,7 @@ EOF
 Em `app/(app)/_components/header.tsx`, localizar o bloco `<nav>` (linhas 16–32). Adicionar link após o de Empréstimos:
 
 **Antes:**
+
 ```tsx
 <Link
   href="/emprestimos/novo"
@@ -1574,6 +1597,7 @@ Em `app/(app)/_components/header.tsx`, localizar o bloco `<nav>` (linhas 16–32
 ```
 
 **Depois:**
+
 ```tsx
 <Link
   href="/emprestimos/novo"
@@ -1611,6 +1635,7 @@ npm test 2>&1 | tail -30
 ```
 
 Saída esperada: todos os testes passando. Procurar especificamente por:
+
 - `tests/integration/models/emprestimos.test.ts` — PASS
 - `tests/integration/api/v1/loans/patch.test.ts` — PASS
 - `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts` — PASS

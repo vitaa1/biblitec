@@ -21,14 +21,14 @@ Critério da Maria: gestor real registra 5 devoluções consecutivas sem pedir a
 
 ## Decisões de design
 
-| Decisão | Escolha | Motivo |
-|---|---|---|
-| Acesso ao screen | Gestor apenas | Padrão de `/emprestimos/novo`; admin usa API se necessário |
-| Default de "Estado na devolução" | Sem seleção (não altera estado) | Não sobrescrever estado anterior inadvertidamente |
-| Mapeamento de estado UI → DB | "Bom" → `bom`, "Danificado leve" → `regular`, "Danificado grave" → `danificado` | Reutiliza enum existente `estadoExemplarEnum` |
-| Cor do botão de confirmação | Azul (`bg-blue-600`) | Diferencia visualmente do verde de empréstimo |
-| Baixa após devolução | Oferecida, não forçada | Dialog opcional após sucesso com "Danificado grave" |
-| Estado do exemplar se gestor recusar baixa | `disponivel` com `estado = "danificado"` | Registro físico mantido; histórico preservado |
+| Decisão                                    | Escolha                                                                         | Motivo                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Acesso ao screen                           | Gestor apenas                                                                   | Padrão de `/emprestimos/novo`; admin usa API se necessário |
+| Default de "Estado na devolução"           | Sem seleção (não altera estado)                                                 | Não sobrescrever estado anterior inadvertidamente          |
+| Mapeamento de estado UI → DB               | "Bom" → `bom`, "Danificado leve" → `regular`, "Danificado grave" → `danificado` | Reutiliza enum existente `estadoExemplarEnum`              |
+| Cor do botão de confirmação                | Azul (`bg-blue-600`)                                                            | Diferencia visualmente do verde de empréstimo              |
+| Baixa após devolução                       | Oferecida, não forçada                                                          | Dialog opcional após sucesso com "Danificado grave"        |
+| Estado do exemplar se gestor recusar baixa | `disponivel` com `estado = "danificado"`                                        | Registro físico mantido; histórico preservado              |
 
 ---
 
@@ -43,7 +43,14 @@ Resolve tombamento ou ISBN para um empréstimo ativo na giroteca do gestor. Reto
 ```typescript
 type BuscaDevResult =
   | { ok: true; data: EmprestimoParaDevolucao }
-  | { ok: false; code: "NAO_ENCONTRADO" | "SEM_EMPRESTIMO_ABERTO" | "MULTIPLOS_EMPRESTADOS" | "EXEMPLAR_BAIXADO" };
+  | {
+      ok: false;
+      code:
+        | "NAO_ENCONTRADO"
+        | "SEM_EMPRESTIMO_ABERTO"
+        | "MULTIPLOS_EMPRESTADOS"
+        | "EXEMPLAR_BAIXADO";
+    };
 
 export async function buscarParaDevolucao(
   query: string,
@@ -98,7 +105,7 @@ export async function devolver(
   id: string,
   contexto: Contexto,
   opcoes?: { estadoRetorno?: "bom" | "regular" | "danificado" },
-): Promise<Emprestimo>
+): Promise<Emprestimo>;
 ```
 
 Dentro da transação existente, se `opcoes?.estadoRetorno` for fornecido, o `update exemplares` também aplica `estado = opcoes.estadoRetorno`. Sem mudança de comportamento para chamadas sem `opcoes`.
@@ -111,15 +118,15 @@ Dentro da transação existente, se `opcoes?.estadoRetorno` for fornecido, o `up
 
 Arquivo: `app/api/v1/emprestimos/buscar-devolucao/route.ts`
 
-| Resultado de `buscarParaDevolucao` | HTTP | Body |
-|---|---|---|
-| `{ ok: true, data }` | 200 | `EmprestimoParaDevolucao` (com datas serializadas ISO) |
-| `NAO_ENCONTRADO` | 404 | `{ error: "Nenhum exemplar com esse código foi encontrado nesta giroteca." }` |
-| `SEM_EMPRESTIMO_ABERTO` | 404 | `{ error: "Este exemplar não está emprestado no momento.", code: "SEM_EMPRESTIMO_ABERTO" }` |
-| `MULTIPLOS_EMPRESTADOS` | 409 | `{ error: "Há mais de um exemplar deste livro emprestado. Use o código de tombamento.", code: "MULTIPLOS_EMPRESTADOS" }` |
-| `EXEMPLAR_BAIXADO` | 404 | `{ error: "Este exemplar foi baixado do acervo.", code: "EXEMPLAR_BAIXADO" }` |
-| Admin | 400 | `{ error: "Admin não opera devoluções diretamente." }` |
-| `q` ausente/vazio | 400 | `{ error: "Parâmetro 'q' é obrigatório." }` |
+| Resultado de `buscarParaDevolucao` | HTTP | Body                                                                                                                     |
+| ---------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------ |
+| `{ ok: true, data }`               | 200  | `EmprestimoParaDevolucao` (com datas serializadas ISO)                                                                   |
+| `NAO_ENCONTRADO`                   | 404  | `{ error: "Nenhum exemplar com esse código foi encontrado nesta giroteca." }`                                            |
+| `SEM_EMPRESTIMO_ABERTO`            | 404  | `{ error: "Este exemplar não está emprestado no momento.", code: "SEM_EMPRESTIMO_ABERTO" }`                              |
+| `MULTIPLOS_EMPRESTADOS`            | 409  | `{ error: "Há mais de um exemplar deste livro emprestado. Use o código de tombamento.", code: "MULTIPLOS_EMPRESTADOS" }` |
+| `EXEMPLAR_BAIXADO`                 | 404  | `{ error: "Este exemplar foi baixado do acervo.", code: "EXEMPLAR_BAIXADO" }`                                            |
+| Admin                              | 400  | `{ error: "Admin não opera devoluções diretamente." }`                                                                   |
+| `q` ausente/vazio                  | 400  | `{ error: "Parâmetro 'q' é obrigatório." }`                                                                              |
 
 ### `PATCH /api/v1/loans/[id]` — extensão
 
@@ -145,11 +152,11 @@ Já existe. A UI chama com `{ motivo: "Danificado" }` pré-preenchido.
 
 ### Arquivos
 
-| Arquivo | Tipo | Responsabilidade |
-|---|---|---|
-| `app/(app)/devolucoes/page.tsx` | Server Component | Valida contexto (gestor), renderiza form |
-| `app/(app)/devolucoes/_components/devolucao-form.tsx` | Client Component | Estado e interação |
-| `app/(app)/_components/header.tsx` | Modificar | Adicionar link "Devoluções" na nav |
+| Arquivo                                               | Tipo             | Responsabilidade                         |
+| ----------------------------------------------------- | ---------------- | ---------------------------------------- |
+| `app/(app)/devolucoes/page.tsx`                       | Server Component | Valida contexto (gestor), renderiza form |
+| `app/(app)/devolucoes/_components/devolucao-form.tsx` | Client Component | Estado e interação                       |
+| `app/(app)/_components/header.tsx`                    | Modificar        | Adicionar link "Devoluções" na nav       |
 
 ### Estado interno
 
@@ -182,13 +189,13 @@ Já existe. A UI chama com `{ motivo: "Danificado" }` pré-preenchido.
 
 ### Mensagens inline sob o campo (sem toast)
 
-| `code` na resposta | Mensagem |
-|---|---|
-| `SEM_EMPRESTIMO_ABERTO` | "Este exemplar não está emprestado no momento." |
+| `code` na resposta      | Mensagem                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `SEM_EMPRESTIMO_ABERTO` | "Este exemplar não está emprestado no momento."                              |
 | `MULTIPLOS_EMPRESTADOS` | "Há mais de um exemplar deste livro emprestado. Use o código de tombamento." |
-| `EXEMPLAR_BAIXADO` | "Este exemplar foi baixado do acervo." |
-| sem code (404) | "Nenhum exemplar com esse código foi encontrado nesta giroteca." |
-| erro de rede | "Sem conexão com o servidor. Tente novamente." |
+| `EXEMPLAR_BAIXADO`      | "Este exemplar foi baixado do acervo."                                       |
+| sem code (404)          | "Nenhum exemplar com esse código foi encontrado nesta giroteca."             |
+| erro de rede            | "Sem conexão com o servidor. Tente novamente."                               |
 
 ### Card de confirmação (aparece quando `resultado !== null`)
 
@@ -298,57 +305,57 @@ function resetar() {
 
 ### `tests/integration/models/emprestimos.test.ts` — novos casos
 
-| Caso de teste | Expectativa |
-|---|---|
-| `buscarParaDevolucao()` por tombamento com empréstimo ativo | `{ ok: true, data }` com todos os campos |
-| `buscarParaDevolucao()` por tombamento sem empréstimo aberto (`disponivel`) | `{ ok: false, code: "SEM_EMPRESTIMO_ABERTO" }` |
-| `buscarParaDevolucao()` por tombamento de exemplar `baixado` | `{ ok: false, code: "EXEMPLAR_BAIXADO" }` |
-| `buscarParaDevolucao()` por ISBN com 1 exemplar emprestado | `{ ok: true, data }` |
-| `buscarParaDevolucao()` por ISBN com >1 exemplares emprestados | `{ ok: false, code: "MULTIPLOS_EMPRESTADOS" }` |
-| `buscarParaDevolucao()` por tombamento de outra giroteca | `{ ok: false, code: "NAO_ENCONTRADO" }` (não vaza) |
-| `devolver()` com `estadoRetorno: "regular"` | `dataDevolucao` preenchida + `exemplares.estado = "regular"` |
-| `devolver()` sem `estadoRetorno` | `dataDevolucao` preenchida + `exemplares.estado` inalterado |
-| `devolver()` gestor A tenta devolver empréstimo de giroteca B | lança `AppError` 403 |
+| Caso de teste                                                               | Expectativa                                                  |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `buscarParaDevolucao()` por tombamento com empréstimo ativo                 | `{ ok: true, data }` com todos os campos                     |
+| `buscarParaDevolucao()` por tombamento sem empréstimo aberto (`disponivel`) | `{ ok: false, code: "SEM_EMPRESTIMO_ABERTO" }`               |
+| `buscarParaDevolucao()` por tombamento de exemplar `baixado`                | `{ ok: false, code: "EXEMPLAR_BAIXADO" }`                    |
+| `buscarParaDevolucao()` por ISBN com 1 exemplar emprestado                  | `{ ok: true, data }`                                         |
+| `buscarParaDevolucao()` por ISBN com >1 exemplares emprestados              | `{ ok: false, code: "MULTIPLOS_EMPRESTADOS" }`               |
+| `buscarParaDevolucao()` por tombamento de outra giroteca                    | `{ ok: false, code: "NAO_ENCONTRADO" }` (não vaza)           |
+| `devolver()` com `estadoRetorno: "regular"`                                 | `dataDevolucao` preenchida + `exemplares.estado = "regular"` |
+| `devolver()` sem `estadoRetorno`                                            | `dataDevolucao` preenchida + `exemplares.estado` inalterado  |
+| `devolver()` gestor A tenta devolver empréstimo de giroteca B               | lança `AppError` 403                                         |
 
 ### `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts` — novo arquivo
 
-| Caso | Status |
-|---|---|
-| Tombamento com empréstimo ativo | 200 + dados completos |
+| Caso                                   | Status                                |
+| -------------------------------------- | ------------------------------------- |
+| Tombamento com empréstimo ativo        | 200 + dados completos                 |
 | Tombamento sem empréstimo (disponivel) | 404 + `code: "SEM_EMPRESTIMO_ABERTO"` |
-| ISBN com >1 emprestados na giroteca | 409 + `code: "MULTIPLOS_EMPRESTADOS"` |
-| Tombamento de outra giroteca | 404 sem revelar existência |
-| Exemplar baixado | 404 + `code: "EXEMPLAR_BAIXADO"` |
-| Admin | 400 |
-| `q` ausente | 400 |
+| ISBN com >1 emprestados na giroteca    | 409 + `code: "MULTIPLOS_EMPRESTADOS"` |
+| Tombamento de outra giroteca           | 404 sem revelar existência            |
+| Exemplar baixado                       | 404 + `code: "EXEMPLAR_BAIXADO"`      |
+| Admin                                  | 400                                   |
+| `q` ausente                            | 400                                   |
 
 ### `tests/integration/api/v1/loans/patch.test.ts` — extensão existente
 
-| Caso | Status |
-|---|---|
-| Devolução em dia (caminho feliz) | 200, `dataDevolucao` preenchida |
-| Devolução em atraso | 200 (atraso é visual; não bloqueia devolução) |
-| Devolução com `estadoRetorno: "danificado"` | 200 + `exemplares.estado = "danificado"` |
-| Devolução sem `estadoRetorno` | 200 + `exemplares.estado` inalterado |
-| Gestor A tenta devolver empréstimo de giroteca B | 403 |
-| ID inexistente / já devolvido | 404 |
+| Caso                                             | Status                                        |
+| ------------------------------------------------ | --------------------------------------------- |
+| Devolução em dia (caminho feliz)                 | 200, `dataDevolucao` preenchida               |
+| Devolução em atraso                              | 200 (atraso é visual; não bloqueia devolução) |
+| Devolução com `estadoRetorno: "danificado"`      | 200 + `exemplares.estado = "danificado"`      |
+| Devolução sem `estadoRetorno`                    | 200 + `exemplares.estado` inalterado          |
+| Gestor A tenta devolver empréstimo de giroteca B | 403                                           |
+| ID inexistente / já devolvido                    | 404                                           |
 
 ---
 
 ## Arquivos afetados
 
-| Arquivo | Ação |
-|---|---|
-| `models/emprestimos.ts` | Modificar — adicionar `buscarParaDevolucao()`, estender `devolver()` |
-| `infra/schemas.ts` | Modificar — adicionar `devolverEmprestimoSchema` |
-| `app/api/v1/emprestimos/buscar-devolucao/route.ts` | Criar — endpoint de busca para devolução |
-| `app/api/v1/loans/[id]/route.ts` | Modificar — aceitar body com `estadoRetorno` |
-| `app/(app)/devolucoes/page.tsx` | Criar — Server Component |
-| `app/(app)/devolucoes/_components/devolucao-form.tsx` | Criar — Client Component |
-| `app/(app)/_components/header.tsx` | Modificar — link "Devoluções" na nav |
-| `tests/integration/models/emprestimos.test.ts` | Modificar — novos casos |
-| `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts` | Criar |
-| `tests/integration/api/v1/loans/patch.test.ts` | Modificar — casos com `estadoRetorno` |
+| Arquivo                                                         | Ação                                                                 |
+| --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `models/emprestimos.ts`                                         | Modificar — adicionar `buscarParaDevolucao()`, estender `devolver()` |
+| `infra/schemas.ts`                                              | Modificar — adicionar `devolverEmprestimoSchema`                     |
+| `app/api/v1/emprestimos/buscar-devolucao/route.ts`              | Criar — endpoint de busca para devolução                             |
+| `app/api/v1/loans/[id]/route.ts`                                | Modificar — aceitar body com `estadoRetorno`                         |
+| `app/(app)/devolucoes/page.tsx`                                 | Criar — Server Component                                             |
+| `app/(app)/devolucoes/_components/devolucao-form.tsx`           | Criar — Client Component                                             |
+| `app/(app)/_components/header.tsx`                              | Modificar — link "Devoluções" na nav                                 |
+| `tests/integration/models/emprestimos.test.ts`                  | Modificar — novos casos                                              |
+| `tests/integration/api/v1/emprestimos/buscar-devolucao.test.ts` | Criar                                                                |
+| `tests/integration/api/v1/loans/patch.test.ts`                  | Modificar — casos com `estadoRetorno`                                |
 
 ## Fora de escopo
 

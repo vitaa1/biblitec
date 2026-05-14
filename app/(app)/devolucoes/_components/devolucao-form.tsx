@@ -83,13 +83,7 @@ export function DevolucaoForm() {
 
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
-    if (!busca.trim()) {
-      setResultado(null);
-      setErroBusca(null);
-      return;
-    }
-    setResultado(null);
-    setErroBusca(null);
+    if (!busca.trim()) return;
     debounce.current = setTimeout(async () => {
       abortRef.current?.abort();
       const controller = new AbortController();
@@ -226,7 +220,11 @@ export function DevolucaoForm() {
                 id="campo-busca"
                 className="pl-9"
                 value={busca}
-                onChange={(e) => setBusca(e.target.value)}
+                onChange={(e) => {
+                  setBusca(e.target.value);
+                  setResultado(null);
+                  setErroBusca(null);
+                }}
                 placeholder="Ex: T-001 ou 9788535910663"
                 autoComplete="off"
               />
