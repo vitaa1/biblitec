@@ -23,6 +23,7 @@
 ## Mapa de arquivos
 
 **Modificados:**
+
 - `db/schema.ts` — `matricula` passa a ser nullable
 - `infra/errors.ts` — adiciona `code?: string` ao AppError
 - `infra/schemas.ts` — adiciona `updateLeitorSchema`, torna `matricula` opcional em `createLeitorSchema`
@@ -31,6 +32,7 @@
 - `app/(app)/_components/header.tsx` — adiciona links de navegação
 
 **Criados:**
+
 - `app/api/v1/leitores/route.ts` — GET + POST
 - `app/api/v1/leitores/[id]/route.ts` — PUT
 - `app/api/v1/leitores/[id]/desativar/route.ts` — POST
@@ -44,6 +46,7 @@
 - `app/(app)/leitores/_components/desativar-leitor-dialog.tsx`
 
 **Deletados:**
+
 - `app/api/v1/students/route.ts` (substituída por `/api/v1/leitores/route.ts`)
 - `tests/integration/api/v1/students/get.test.ts` (migrado)
 - `tests/integration/api/v1/students/post.test.ts` (migrado)
@@ -53,6 +56,7 @@
 ## Task 1: Migração de schema + infra/errors.ts + infra/schemas.ts
 
 **Files:**
+
 - Modify: `db/schema.ts:165`
 - Modify: `infra/errors.ts`
 - Modify: `infra/schemas.ts`
@@ -60,13 +64,17 @@
 - [ ] **Step 1: Tornar `matricula` nullable em `db/schema.ts`**
 
 Em `db/schema.ts`, linha 165, mude:
+
 ```typescript
 matricula: varchar("matricula", { length: 50 }).notNull(),
 ```
+
 para:
+
 ```typescript
 matricula: varchar("matricula", { length: 50 }),
 ```
+
 A constraint `uniqueIndex("leitores_matricula_giroteca_idx")` continua — em PostgreSQL, valores NULL não violam unique constraints, então múltiplos leitores sem matrícula na mesma giroteca são permitidos.
 
 - [ ] **Step 2: Gerar e aplicar a migration**
@@ -81,6 +89,7 @@ Esperado: nova migration criada em `db/migrations/` e aplicada sem erros.
 - [ ] **Step 3: Adicionar `code?: string` ao AppError em `infra/errors.ts`**
 
 Substitua o arquivo inteiro por:
+
 ```typescript
 export class AppError extends Error {
   constructor(
@@ -105,6 +114,7 @@ export function isDuplicateConstraint(
 - [ ] **Step 4: Atualizar `infra/schemas.ts`**
 
 Substitua o arquivo inteiro por:
+
 ```typescript
 import { z } from "zod";
 
@@ -236,6 +246,7 @@ git commit -m "feat: matrícula nullable, AppError com code, updateLeitorSchema"
 ## Task 2: Reescrever `models/leitores.ts` (TDD)
 
 **Files:**
+
 - Modify: `tests/integration/models/leitores.test.ts`
 - Modify: `models/leitores.ts`
 
@@ -312,7 +323,10 @@ test("buscar() admin com girotecaId filtra por unidade", async () => {
 
 test("buscar() filtra por nome", async () => {
   await criarLeitor(girotecaA.id, { nome: "Ana Silva" });
-  await criarLeitor(girotecaA.id, { nome: "Carlos Sousa", matricula: "MAT-999" });
+  await criarLeitor(girotecaA.id, {
+    nome: "Carlos Sousa",
+    matricula: "MAT-999",
+  });
   const { leitores: lista } = await buscar({ busca: "Ana" }, ctxGestorA);
   expect(lista).toHaveLength(1);
   expect(lista[0].nome).toBe("Ana Silva");
@@ -680,10 +694,7 @@ export async function atualizar(
   return updated;
 }
 
-export async function desativar(
-  id: string,
-  contexto: Contexto,
-): Promise<void> {
+export async function desativar(id: string, contexto: Contexto): Promise<void> {
   const [existente] = await db
     .select()
     .from(leitores)
@@ -724,6 +735,7 @@ git commit -m "feat: reescreve models/leitores com paginação, LeitorComContado
 ## Task 3: API routes GET + POST `/api/v1/leitores` (TDD)
 
 **Files:**
+
 - Create: `tests/integration/api/v1/leitores/get.test.ts`
 - Create: `tests/integration/api/v1/leitores/post.test.ts`
 - Create: `app/api/v1/leitores/route.ts`
@@ -787,7 +799,9 @@ test("GET /api/v1/leitores retorna lista paginada", async () => {
   const body = await res.json();
   expect(Array.isArray(body.leitores)).toBe(true);
   expect(typeof body.total).toBe("number");
-  expect(body.leitores.some((l: { nome: string }) => l.nome === "Ana Lúcia")).toBe(true);
+  expect(
+    body.leitores.some((l: { nome: string }) => l.nome === "Ana Lúcia"),
+  ).toBe(true);
 });
 
 test("GET /api/v1/leitores gestor só vê leitores da própria giroteca", async () => {
@@ -800,8 +814,14 @@ test("GET /api/v1/leitores gestor só vê leitores da própria giroteca", async 
 
   expect(res.status).toBe(200);
   const body = await res.json();
-  expect(body.leitores.every((l: { girotecaId: string }) => l.girotecaId === girotecaA.id)).toBe(true);
-  expect(body.leitores.some((l: { nome: string }) => l.nome === "Leitor B")).toBe(false);
+  expect(
+    body.leitores.every(
+      (l: { girotecaId: string }) => l.girotecaId === girotecaA.id,
+    ),
+  ).toBe(true);
+  expect(
+    body.leitores.some((l: { nome: string }) => l.nome === "Leitor B"),
+  ).toBe(false);
 });
 
 test("GET /api/v1/leitores admin filtra por girotecaId", async () => {
@@ -995,10 +1015,16 @@ export async function GET(request: Request) {
     return Response.json(resultado);
   } catch (error) {
     if (error instanceof AppError) {
-      return Response.json({ error: error.message }, { status: error.status_code });
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 
@@ -1019,7 +1045,10 @@ export async function POST(request: Request) {
       return Response.json(resp, { status: error.status_code });
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1044,6 +1073,7 @@ git commit -m "feat: GET e POST /api/v1/leitores com testes"
 ## Task 4: API route PUT `/api/v1/leitores/[id]` (TDD)
 
 **Files:**
+
 - Create: `tests/integration/api/v1/leitores/put.test.ts`
 - Create: `app/api/v1/leitores/[id]/route.ts`
 
@@ -1193,7 +1223,10 @@ export async function PUT(request: Request, { params }: { params: Params }) {
       return Response.json(resp, { status: error.status_code });
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1218,6 +1251,7 @@ git commit -m "feat: PUT /api/v1/leitores/[id] com testes"
 ## Task 5: API route POST `/api/v1/leitores/[id]/desativar` + limpeza da rota legada (TDD)
 
 **Files:**
+
 - Create: `tests/integration/api/v1/leitores/desativar.test.ts`
 - Create: `app/api/v1/leitores/[id]/desativar/route.ts`
 - Delete: `app/api/v1/students/route.ts`
@@ -1280,7 +1314,9 @@ test("POST desativar leitor não aparece em busca posterior", async () => {
     headers: { Cookie: gestorCookie },
   });
   const lista = await listaRes.json();
-  expect(lista.leitores.some((l: { id: string }) => l.id === leitor.id)).toBe(false);
+  expect(lista.leitores.some((l: { id: string }) => l.id === leitor.id)).toBe(
+    false,
+  );
 });
 
 test("POST desativar retorna 404 para leitor inexistente", async () => {
@@ -1347,7 +1383,10 @@ export async function POST(request: Request, { params }: { params: Params }) {
       );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }
 ```
@@ -1391,6 +1430,7 @@ git commit -m "feat: POST /api/v1/leitores/[id]/desativar; remove rota legada /s
 ## Task 6: Página `/leitores` + componente `LeitorList`
 
 **Files:**
+
 - Create: `app/(app)/leitores/page.tsx`
 - Create: `app/(app)/leitores/_components/leitor-list.tsx`
 
@@ -1781,6 +1821,7 @@ git commit -m "feat: página /leitores com LeitorList, busca e paginação"
 ## Task 7: Dialog `LeitorDialog` (criar e editar)
 
 **Files:**
+
 - Create: `app/(app)/leitores/_components/leitor-dialog.tsx`
 - Modify: `app/(app)/leitores/_components/leitor-list.tsx`
 
@@ -2101,27 +2142,33 @@ export function LeitorDialog({
 - [ ] **Step 2: Conectar `LeitorDialog` ao `LeitorList`**
 
 No topo de `leitor-list.tsx`, adicione os imports:
+
 ```typescript
 import { LeitorDialog } from "./leitor-dialog";
 ```
 
 Dentro da função `LeitorList`, adicione os estados:
+
 ```typescript
 const [dialogAberto, setDialogAberto] = useState(false);
-const [leitorEditando, setLeitorEditando] = useState<LeitorComContadores | null>(null);
+const [leitorEditando, setLeitorEditando] =
+  useState<LeitorComContadores | null>(null);
 ```
 
 Substitua os comentários `/* LeitorDialog será conectado na Task 7 */` nos dois botões "Novo leitor" por:
+
 ```typescript
 onClick={() => { setLeitorEditando(null); setDialogAberto(true); }}
 ```
 
 Substitua o comentário `/* conectar na Task 7 */` no botão Editar por:
+
 ```typescript
 onClick={() => { setLeitorEditando(leitor); setDialogAberto(true); }}
 ```
 
 Antes do fechamento da `</div>` principal, adicione:
+
 ```typescript
 {podeNovoLeitor && (
   <LeitorDialog
@@ -2154,6 +2201,7 @@ git commit -m "feat: LeitorDialog para criar e editar leitores"
 ## Task 8: `DesativarLeitorDialog` + link de navegação no header
 
 **Files:**
+
 - Create: `app/(app)/leitores/_components/desativar-leitor-dialog.tsx`
 - Modify: `app/(app)/leitores/_components/leitor-list.tsx`
 - Modify: `app/(app)/_components/header.tsx`
@@ -2270,22 +2318,27 @@ export function DesativarLeitorDialog({
 - [ ] **Step 2: Conectar `DesativarLeitorDialog` ao `LeitorList`**
 
 No topo de `leitor-list.tsx`, adicione o import:
+
 ```typescript
 import { DesativarLeitorDialog } from "./desativar-leitor-dialog";
 ```
 
 Dentro da função `LeitorList`, adicione os estados:
+
 ```typescript
 const [desativarAberto, setDesativarAberto] = useState(false);
-const [leitorDesativando, setLeitorDesativando] = useState<LeitorComContadores | null>(null);
+const [leitorDesativando, setLeitorDesativando] =
+  useState<LeitorComContadores | null>(null);
 ```
 
 Substitua o comentário `/* conectar na Task 8 */` no botão X (Desativar):
+
 ```typescript
 onClick={() => { setLeitorDesativando(leitor); setDesativarAberto(true); }}
 ```
 
 Antes do fechamento da `</div>` principal (após o bloco do `LeitorDialog`), adicione:
+
 ```typescript
 <DesativarLeitorDialog
   leitor={leitorDesativando}
@@ -2298,6 +2351,7 @@ Antes do fechamento da `</div>` principal (após o bloco do `LeitorDialog`), adi
 - [ ] **Step 3: Adicionar links de navegação ao header**
 
 Substitua `app/(app)/_components/header.tsx` por:
+
 ```typescript
 import Link from "next/link";
 import { LogOut } from "lucide-react";

@@ -54,7 +54,9 @@ test("GET /api/v1/leitores retorna lista paginada", async () => {
   const body = await res.json();
   expect(Array.isArray(body.leitores)).toBe(true);
   expect(typeof body.total).toBe("number");
-  expect(body.leitores.some((l: { nome: string }) => l.nome === "Ana Lúcia")).toBe(true);
+  expect(
+    body.leitores.some((l: { nome: string }) => l.nome === "Ana Lúcia"),
+  ).toBe(true);
 });
 
 test("GET /api/v1/leitores gestor só vê leitores da própria giroteca", async () => {
@@ -72,7 +74,9 @@ test("GET /api/v1/leitores gestor só vê leitores da própria giroteca", async 
       (l: { girotecaId: string }) => l.girotecaId === girotecaA.id,
     ),
   ).toBe(true);
-  expect(body.leitores.some((l: { nome: string }) => l.nome === "Leitor B")).toBe(false);
+  expect(
+    body.leitores.some((l: { nome: string }) => l.nome === "Leitor B"),
+  ).toBe(false);
 });
 
 test("GET /api/v1/leitores admin filtra por girotecaId", async () => {
@@ -94,10 +98,9 @@ test("GET /api/v1/leitores filtra por busca parcial com acentuação", async () 
   await criarLeitor(girotecaA.id, { nome: "João Silva", matricula: "A001" });
   await criarLeitor(girotecaA.id, { nome: "Maria Souza", matricula: "A002" });
 
-  const res = await fetch(
-    "http://localhost:3000/api/v1/leitores?q=jo%C3%A3",
-    { headers: { Cookie: gestorCookie } },
-  );
+  const res = await fetch("http://localhost:3000/api/v1/leitores?q=jo%C3%A3", {
+    headers: { Cookie: gestorCookie },
+  });
 
   expect(res.status).toBe(200);
   const body = await res.json();

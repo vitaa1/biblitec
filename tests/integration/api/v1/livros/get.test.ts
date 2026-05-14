@@ -144,3 +144,41 @@ test("GET /api/v1/livros busca sem resultado retorna array vazio, não erro", as
   expect(body.livros).toHaveLength(0);
   expect(body.total).toBe(0);
 });
+
+test("GET /api/v1/livros gestor não vê livros locais de outra giroteca", async () => {
+  const outraGiroteca = await criarGiroteca();
+  await criarLivro({
+    titulo: "Exclusivo da Outra",
+    autores: "Autor",
+    origem: "local",
+    criadoPorGirotecaId: outraGiroteca.id,
+  });
+
+  const res = await fetch("http://localhost:3000/api/v1/livros", {
+    headers: { Cookie: gestorCookie },
+  });
+
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  expect(body.livros).toHaveLength(0);
+  expect(body.total).toBe(0);
+});
+
+test("GET /api/v1/livros gestor vê livros locais da própria giroteca", async () => {
+  await criarLivro({
+    titulo: "Meu Livro Local",
+    autores: "Autor",
+    origem: "local",
+    criadoPorGirotecaId: girotecaId,
+  });
+  await criarLivro({ titulo: "Livro Central", autores: "Autor" });
+
+  const res = await fetch("http://localhost:3000/api/v1/livros", {
+    headers: { Cookie: gestorCookie },
+  });
+
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  expect(body.livros).toHaveLength(2);
+  expect(body.total).toBe(2);
+});

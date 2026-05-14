@@ -51,9 +51,9 @@ test("POST desativar leitor não aparece em busca posterior", async () => {
     headers: { Cookie: gestorCookie },
   });
   const lista = await listaRes.json();
-  expect(
-    lista.leitores.some((l: { id: string }) => l.id === leitor.id),
-  ).toBe(false);
+  expect(lista.leitores.some((l: { id: string }) => l.id === leitor.id)).toBe(
+    false,
+  );
 });
 
 test("POST desativar retorna 404 para leitor inexistente", async () => {
