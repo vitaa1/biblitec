@@ -1,4 +1,5 @@
 import {
+  buscarParaDevolucao,
   criar,
   devolver,
   listarAtrasados,
@@ -284,4 +285,115 @@ test("devolver() sem estadoRetorno não altera exemplares.estado", async () => {
     .where(eq(exTable.id, exemplar.id));
   expect(ex.status).toBe("disponivel");
   expect(ex.estado).toBe("bom"); // inalterado
+});
+
+test("buscarParaDevolucao() por tombamento com empréstimo ativo retorna dados", async () => {
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-TOC-001",
+  });
+  const leitor = await criarLeitor(girotecaA.id);
+  await criar({ exemplarId: exemplar.id, leitorId: leitor.id }, ctxGestorA);
+
+  const resultado = await buscarParaDevolucao("DEV-TOC-001", ctxGestorA);
+
+  expect(resultado.ok).toBe(true);
+  if (resultado.ok) {
+    expect(resultado.data.exemplar.codigoTombamento).toBe("DEV-TOC-001");
+    expect(resultado.data.leitor.nome).toBe("Leitor de Teste");
+    expect(resultado.data.livro.titulo).toBe("Livro de Teste");
+    expect(resultado.data.emprestimoId).toBeDefined();
+    expect(resultado.data.dataEmprestimo).toBeDefined();
+    expect(resultado.data.dataPrevistaDevolucao).toBeDefined();
+  }
+});
+
+test("buscarParaDevolucao() por tombamento disponível retorna SEM_EMPRESTIMO_ABERTO", async () => {
+  const livro = await criarLivro();
+  await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-TOC-002",
+    status: "disponivel",
+  });
+
+  const resultado = await buscarParaDevolucao("DEV-TOC-002", ctxGestorA);
+
+  expect(resultado).toEqual({ ok: false, code: "SEM_EMPRESTIMO_ABERTO" });
+});
+
+test("buscarParaDevolucao() por tombamento baixado retorna EXEMPLAR_BAIXADO", async () => {
+  const livro = await criarLivro();
+  await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-TOC-003",
+    status: "baixado",
+  });
+
+  const resultado = await buscarParaDevolucao("DEV-TOC-003", ctxGestorA);
+
+  expect(resultado).toEqual({ ok: false, code: "EXEMPLAR_BAIXADO" });
+});
+
+test("buscarParaDevolucao() por tombamento inexistente retorna NAO_ENCONTRADO", async () => {
+  const resultado = await buscarParaDevolucao(
+    "TOMBAMENTO-INEXISTENTE",
+    ctxGestorA,
+  );
+
+  expect(resultado).toEqual({ ok: false, code: "NAO_ENCONTRADO" });
+});
+
+test("buscarParaDevolucao() por tombamento de outra giroteca não vaza existência", async () => {
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-TOC-GIROTECA-A",
+  });
+  const leitor = await criarLeitor(girotecaA.id);
+  await criar({ exemplarId: exemplar.id, leitorId: leitor.id }, ctxGestorA);
+
+  const gestorBUsuario = await criarUsuario({
+    papel: "gestor_giroteca",
+    girotecaId: girotecaB.id,
+  });
+  const ctxGestorB: Contexto = {
+    usuarioId: gestorBUsuario.id,
+    papel: "gestor_giroteca",
+    girotecaId: girotecaB.id,
+  };
+
+  const resultado = await buscarParaDevolucao("DEV-TOC-GIROTECA-A", ctxGestorB);
+
+  expect(resultado).toEqual({ ok: false, code: "NAO_ENCONTRADO" });
+});
+
+test("buscarParaDevolucao() por ISBN com 1 exemplar emprestado retorna dados", async () => {
+  const livro = await criarLivro({ isbn: "9781111111111" });
+  const exemplar = await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-ISBN-TOC-1",
+  });
+  const leitor = await criarLeitor(girotecaA.id);
+  await criar({ exemplarId: exemplar.id, leitorId: leitor.id }, ctxGestorA);
+
+  const resultado = await buscarParaDevolucao("9781111111111", ctxGestorA);
+
+  expect(resultado.ok).toBe(true);
+  if (resultado.ok) {
+    expect(resultado.data.exemplar.codigoTombamento).toBe("DEV-ISBN-TOC-1");
+  }
+});
+
+test("buscarParaDevolucao() por ISBN com >1 exemplares emprestados retorna MULTIPLOS_EMPRESTADOS", async () => {
+  const livro = await criarLivro({ isbn: "9782222222222" });
+  const ex1 = await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-ISBN-TOC-2A",
+  });
+  const ex2 = await criarExemplar(livro.id, girotecaA.id, {
+    codigoTombamento: "DEV-ISBN-TOC-2B",
+  });
+  const leitor1 = await criarLeitor(girotecaA.id, { matricula: "DEV-MAT-2A" });
+  const leitor2 = await criarLeitor(girotecaA.id, { matricula: "DEV-MAT-2B" });
+  await criar({ exemplarId: ex1.id, leitorId: leitor1.id }, ctxGestorA);
+  await criar({ exemplarId: ex2.id, leitorId: leitor2.id }, ctxGestorA);
+
+  const resultado = await buscarParaDevolucao("9782222222222", ctxGestorA);
+
+  expect(resultado).toEqual({ ok: false, code: "MULTIPLOS_EMPRESTADOS" });
 });

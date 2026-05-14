@@ -1,6 +1,6 @@
 import { and, count, eq, isNull, lt } from "drizzle-orm";
 import { db } from "db/index";
-import { emprestimos, exemplares, leitores } from "db/schema";
+import { emprestimos, exemplares, leitores, livros } from "db/schema";
 import { AppError } from "infra/errors";
 import type { Contexto } from "lib/auth";
 
@@ -311,4 +311,131 @@ export async function listarAtrasados(
       ),
     )
     .orderBy(emprestimos.dataPrevistaDevolucao);
+}
+
+export type EmprestimoParaDevolucao = {
+  emprestimoId: string;
+  exemplar: {
+    id: string;
+    codigoTombamento: string;
+    estado: "novo" | "bom" | "regular" | "danificado";
+  };
+  livro: { titulo: string; autores: string; capaUrl: string | null };
+  leitor: { nome: string; turma: string | null };
+  dataEmprestimo: Date;
+  dataPrevistaDevolucao: Date;
+};
+
+export type BuscaDevResult =
+  | { ok: true; data: EmprestimoParaDevolucao }
+  | {
+      ok: false;
+      code:
+        | "NAO_ENCONTRADO"
+        | "SEM_EMPRESTIMO_ABERTO"
+        | "MULTIPLOS_EMPRESTADOS"
+        | "EXEMPLAR_BAIXADO";
+    };
+
+const ISBN_REGEX_DEV = /^\d{10}$|^\d{13}$/;
+
+export async function buscarParaDevolucao(
+  query: string,
+  contexto: Contexto,
+): Promise<BuscaDevResult> {
+  if (contexto.papel !== "gestor_giroteca" || !contexto.girotecaId) {
+    throw new AppError("Admin não opera devoluções diretamente.", 400);
+  }
+  const girotecaId = contexto.girotecaId;
+  const termo = query.trim();
+  if (!termo) return { ok: false, code: "NAO_ENCONTRADO" };
+
+  let exemplarRow: typeof exemplares.$inferSelect | undefined;
+
+  if (ISBN_REGEX_DEV.test(termo)) {
+    const [livroRow] = await db
+      .select()
+      .from(livros)
+      .where(and(eq(livros.isbn, termo), isNull(livros.deletadoEm)));
+    if (!livroRow) return { ok: false, code: "NAO_ENCONTRADO" };
+
+    const emprestados = await db
+      .select()
+      .from(exemplares)
+      .where(
+        and(
+          eq(exemplares.livroId, livroRow.id),
+          eq(exemplares.girotecaId, girotecaId),
+          eq(exemplares.status, "emprestado"),
+        ),
+      );
+
+    if (emprestados.length === 0)
+      return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
+    if (emprestados.length > 1)
+      return { ok: false, code: "MULTIPLOS_EMPRESTADOS" };
+    exemplarRow = emprestados[0];
+  } else {
+    const [row] = await db
+      .select()
+      .from(exemplares)
+      .where(
+        and(
+          eq(exemplares.codigoTombamento, termo),
+          eq(exemplares.girotecaId, girotecaId),
+        ),
+      );
+    if (!row) return { ok: false, code: "NAO_ENCONTRADO" };
+    if (row.status === "baixado") return { ok: false, code: "EXEMPLAR_BAIXADO" };
+    if (row.status !== "emprestado")
+      return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
+    exemplarRow = row;
+  }
+
+  const [dadosEmprestimo] = await db
+    .select({
+      emprestimoId: emprestimos.id,
+      dataEmprestimo: emprestimos.dataEmprestimo,
+      dataPrevistaDevolucao: emprestimos.dataPrevistaDevolucao,
+      nomeLeitor: leitores.nome,
+      turmaLeitor: leitores.turma,
+      tituloLivro: livros.titulo,
+      autoresLivro: livros.autores,
+      capaUrlLivro: livros.capaUrl,
+    })
+    .from(emprestimos)
+    .innerJoin(leitores, eq(emprestimos.leitorId, leitores.id))
+    .innerJoin(livros, eq(livros.id, exemplarRow.livroId))
+    .where(
+      and(
+        eq(emprestimos.exemplarId, exemplarRow.id),
+        isNull(emprestimos.dataDevolucao),
+      ),
+    )
+    .limit(1);
+
+  if (!dadosEmprestimo) return { ok: false, code: "SEM_EMPRESTIMO_ABERTO" };
+
+  return {
+    ok: true,
+    data: {
+      emprestimoId: dadosEmprestimo.emprestimoId,
+      exemplar: {
+        id: exemplarRow.id,
+        codigoTombamento: exemplarRow.codigoTombamento,
+        estado: exemplarRow.estado as "novo" | "bom" | "regular" | "danificado",
+      },
+      livro: {
+        titulo: dadosEmprestimo.tituloLivro,
+        autores: dadosEmprestimo.autoresLivro,
+        capaUrl: dadosEmprestimo.capaUrlLivro,
+      },
+      leitor: {
+        nome: dadosEmprestimo.nomeLeitor,
+        turma: dadosEmprestimo.turmaLeitor,
+      },
+      dataEmprestimo: dadosEmprestimo.dataEmprestimo,
+      dataPrevistaDevolucao: dadosEmprestimo.dataPrevistaDevolucao,
+    },
+  };
 }
