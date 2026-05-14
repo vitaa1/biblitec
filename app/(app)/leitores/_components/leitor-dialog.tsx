@@ -38,6 +38,8 @@ interface FormState {
   responsavel: string;
 }
 
+type Erros = Partial<Record<keyof FormState | "geral", string>>;
+
 const FORM_VAZIO: FormState = {
   nome: "",
   tipo: "aluno",
@@ -58,6 +60,16 @@ function leitorParaForm(leitor: LeitorComContadores): FormState {
   };
 }
 
+// Aplica máscara brasileira progressiva: (XX) XXXX-XXXX ou (XX) XXXXX-XXXX
+function formatarTelefone(valor: string): string {
+  const digits = valor.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10)
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 interface FormProps {
   onClose: () => void;
   onSuccess: () => void;
@@ -67,25 +79,41 @@ interface FormProps {
 
 function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
   const modoEdicao = Boolean(leitor);
-  const [form, setForm] = useState<FormState>(
+  const [form, setFormState] = useState<FormState>(
     leitor ? leitorParaForm(leitor) : FORM_VAZIO,
   );
-  const [erroGeral, setErroGeral] = useState<string | null>(null);
-  const [erroMatricula, setErroMatricula] = useState<string | null>(null);
+  const [erros, setErros] = useState<Erros>({});
   const [salvando, setSalvando] = useState(false);
 
   function setField<K extends keyof FormState>(field: K, value: FormState[K]) {
-    setForm((f) => ({ ...f, [field]: value }));
-    setErroGeral(null);
-    if (field === "matricula") setErroMatricula(null);
+    setFormState((f) => ({ ...f, [field]: value }));
+    setErros((e) => ({ ...e, [field]: undefined, geral: undefined }));
+  }
+
+  function validar(): Erros {
+    const e: Erros = {};
+    if (!form.nome.trim()) e.nome = "Nome é obrigatório.";
+    if (form.matricula.length > 50)
+      e.matricula = "Matrícula deve ter no máximo 50 caracteres.";
+    if (form.turma.length > 100)
+      e.turma = "Turma deve ter no máximo 100 caracteres.";
+    if (form.responsavel.length > 255)
+      e.responsavel = "Responsável deve ter no máximo 255 caracteres.";
+    const digitos = form.telefone.replace(/\D/g, "");
+    if (digitos.length > 0 && digitos.length < 10)
+      e.telefone = "Telefone incompleto. Ex: (86) 99999-0000";
+    return e;
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!form.nome.trim()) return;
+    const errosValidacao = validar();
+    if (Object.keys(errosValidacao).length > 0) {
+      setErros(errosValidacao);
+      return;
+    }
 
-    setErroGeral(null);
-    setErroMatricula(null);
+    setErros({});
     setSalvando(true);
 
     try {
@@ -122,11 +150,11 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
       if (!res.ok) {
         const body = await res.json();
         if (body.code === "MATRICULA_DUPLICADA") {
-          setErroMatricula(
-            "Já existe um leitor com esta matrícula nesta giroteca.",
-          );
+          setErros({
+            matricula: "Já existe um leitor com esta matrícula nesta giroteca.",
+          });
         } else {
-          setErroGeral(body.error ?? "Erro ao salvar leitor.");
+          setErros({ geral: body.error ?? "Erro ao salvar leitor." });
         }
         return;
       }
@@ -138,7 +166,8 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
     }
   }
 
-  const podeConfirmar = Boolean(form.nome.trim()) && !salvando;
+  const temErros = Object.values(erros).some(Boolean);
+  const podeConfirmar = Boolean(form.nome.trim()) && !salvando && !temErros;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 py-2" noValidate>
@@ -154,9 +183,21 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
           value={form.nome}
           onChange={(e) => setField("nome", e.target.value)}
           placeholder="Ex: Ana Lúcia"
+          maxLength={255}
           required
           autoFocus
+          aria-invalid={!!erros.nome}
+          aria-describedby={erros.nome ? "leitor-nome-erro" : undefined}
         />
+        {erros.nome && (
+          <p
+            id="leitor-nome-erro"
+            className="text-sm text-red-600"
+            role="alert"
+          >
+            {erros.nome}
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -183,16 +224,19 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
           value={form.matricula}
           onChange={(e) => setField("matricula", e.target.value)}
           placeholder="Opcional"
-          aria-invalid={!!erroMatricula}
-          aria-describedby={erroMatricula ? "leitor-matricula-erro" : undefined}
+          maxLength={50}
+          aria-invalid={!!erros.matricula}
+          aria-describedby={
+            erros.matricula ? "leitor-matricula-erro" : undefined
+          }
         />
-        {erroMatricula && (
+        {erros.matricula && (
           <p
             id="leitor-matricula-erro"
             className="text-sm text-red-600"
             role="alert"
           >
-            {erroMatricula}
+            {erros.matricula}
           </p>
         )}
       </div>
@@ -204,7 +248,19 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
           value={form.turma}
           onChange={(e) => setField("turma", e.target.value)}
           placeholder="Ex: 5A"
+          maxLength={100}
+          aria-invalid={!!erros.turma}
+          aria-describedby={erros.turma ? "leitor-turma-erro" : undefined}
         />
+        {erros.turma && (
+          <p
+            id="leitor-turma-erro"
+            className="text-sm text-red-600"
+            role="alert"
+          >
+            {erros.turma}
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -212,9 +268,24 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
         <Input
           id="leitor-telefone"
           value={form.telefone}
-          onChange={(e) => setField("telefone", e.target.value)}
+          onChange={(e) =>
+            setField("telefone", formatarTelefone(e.target.value))
+          }
           placeholder="Ex: (86) 99999-0000"
+          inputMode="tel"
+          maxLength={15}
+          aria-invalid={!!erros.telefone}
+          aria-describedby={erros.telefone ? "leitor-telefone-erro" : undefined}
         />
+        {erros.telefone && (
+          <p
+            id="leitor-telefone-erro"
+            className="text-sm text-red-600"
+            role="alert"
+          >
+            {erros.telefone}
+          </p>
+        )}
       </div>
 
       <div className="space-y-1.5">
@@ -224,12 +295,26 @@ function LeitorForm({ onClose, onSuccess, girotecaId, leitor }: FormProps) {
           value={form.responsavel}
           onChange={(e) => setField("responsavel", e.target.value)}
           placeholder="Nome do responsável (opcional)"
+          maxLength={255}
+          aria-invalid={!!erros.responsavel}
+          aria-describedby={
+            erros.responsavel ? "leitor-responsavel-erro" : undefined
+          }
         />
+        {erros.responsavel && (
+          <p
+            id="leitor-responsavel-erro"
+            className="text-sm text-red-600"
+            role="alert"
+          >
+            {erros.responsavel}
+          </p>
+        )}
       </div>
 
-      {erroGeral && (
+      {erros.geral && (
         <p className="text-sm text-red-600" role="alert">
-          {erroGeral}
+          {erros.geral}
         </p>
       )}
 
