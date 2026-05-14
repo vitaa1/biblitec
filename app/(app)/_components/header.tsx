@@ -21,6 +21,12 @@ export async function AppHeader() {
               Catálogo
             </Link>
             <Link
+              href="/emprestimos/novo"
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
+              Empréstimos
+            </Link>
+            <Link
               href="/leitores"
               className="text-sm text-gray-600 hover:text-gray-900"
             >

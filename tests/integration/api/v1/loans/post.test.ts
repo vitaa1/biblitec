@@ -8,6 +8,7 @@ import {
 } from "tests/factories";
 
 let cookie: string;
+let gestorCookie: string;
 let exemplarId: string;
 let leitorId: string;
 let girotecaId: string;
@@ -35,7 +36,30 @@ beforeEach(async () => {
     body: JSON.stringify({ email: "admin@test.com", senha: "senha123" }),
   });
   cookie = loginRes.headers.get("set-cookie")!.split(";")[0].trim();
+
+  await criarUsuario({
+    email: "gestor@test.com",
+    senha: "senha123",
+    papel: "gestor_giroteca",
+    girotecaId: giroteca.id,
+  });
+  const loginGestor = await fetch("http://localhost:3000/api/v1/sessoes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "gestor@test.com", senha: "senha123" }),
+  });
+  gestorCookie = loginGestor.headers.get("set-cookie")!.split(";")[0].trim();
 });
+
+async function criarCenarioEmprestimo() {
+  const livro = await criarLivro({
+    titulo: "Dom Casmurro",
+    autores: "Machado",
+  });
+  const exemplar = await criarExemplar(livro.id, girotecaId);
+  const leitor = await criarLeitor(girotecaId, { nome: "Ana Lúcia" });
+  return { livro, exemplar, leitor };
+}
 
 test("POST /api/v1/loans cria empréstimo e retorna 201", async () => {
   const response = await fetch("http://localhost:3000/api/v1/loans", {
@@ -79,4 +103,138 @@ test("POST /api/v1/loans com exemplar indisponível retorna 409", async () => {
   });
 
   expect(response.status).toBe(409);
+});
+
+test("POST /api/v1/loans aceita dataPrevistaDevolucao customizada", async () => {
+  const { exemplar, leitor } = await criarCenarioEmprestimo();
+  const dataAlvo = new Date();
+  dataAlvo.setDate(dataAlvo.getDate() + 30);
+  const dataIso = dataAlvo.toISOString().slice(0, 10);
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitor.id,
+      dataPrevistaDevolucao: dataIso,
+    }),
+  });
+
+  expect(res.status).toBe(201);
+  const body = await res.json();
+  const dataPrevista = new Date(body.dataPrevistaDevolucao);
+  expect(dataPrevista.toISOString().slice(0, 10)).toBe(dataIso);
+});
+
+test("POST /api/v1/loans rejeita data no passado", async () => {
+  const { exemplar, leitor } = await criarCenarioEmprestimo();
+  const ontem = new Date();
+  ontem.setDate(ontem.getDate() - 1);
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitor.id,
+      dataPrevistaDevolucao: ontem.toISOString().slice(0, 10),
+    }),
+  });
+
+  expect(res.status).toBe(400);
+  const body = await res.json();
+  expect(body.error).toMatch(/Data de devolução fora do permitido/);
+});
+
+test("POST /api/v1/loans aceita dataPrevistaDevolucao exatamente hoje+60", async () => {
+  const { exemplar, leitor } = await criarCenarioEmprestimo();
+  const limite = new Date();
+  limite.setUTCDate(limite.getUTCDate() + 60);
+  const dataIso = limite.toISOString().slice(0, 10);
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitor.id,
+      dataPrevistaDevolucao: dataIso,
+    }),
+  });
+
+  expect(res.status).toBe(201);
+});
+
+test("POST /api/v1/loans rejeita data acima de hoje+60", async () => {
+  const { exemplar, leitor } = await criarCenarioEmprestimo();
+  const muitoLonge = new Date();
+  muitoLonge.setUTCDate(muitoLonge.getUTCDate() + 61);
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitor.id,
+      dataPrevistaDevolucao: muitoLonge.toISOString().slice(0, 10),
+    }),
+  });
+
+  expect(res.status).toBe(400);
+});
+
+test("POST /api/v1/loans erro de leitor inativo inclui code=LEITOR_INATIVO", async () => {
+  const livro = await criarLivro({ titulo: "T", autores: "A" });
+  const exemplar = await criarExemplar(livro.id, girotecaId);
+  const leitor = await criarLeitor(girotecaId, {
+    nome: "Inativo",
+    ativo: false,
+  });
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({ exemplarId: exemplar.id, leitorId: leitor.id }),
+  });
+
+  expect(res.status).toBe(409);
+  const body = await res.json();
+  expect(body.code).toBe("LEITOR_INATIVO");
+});
+
+test("POST /api/v1/loans erro de exemplar indisponível inclui code=EXEMPLAR_INDISPONIVEL", async () => {
+  const livro = await criarLivro({ titulo: "T", autores: "A" });
+  const exemplar = await criarExemplar(livro.id, girotecaId, {
+    status: "emprestado",
+  });
+  const leitor = await criarLeitor(girotecaId, { nome: "L" });
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({ exemplarId: exemplar.id, leitorId: leitor.id }),
+  });
+
+  expect(res.status).toBe(409);
+  const body = await res.json();
+  expect(body.code).toBe("EXEMPLAR_INDISPONIVEL");
+});
+
+test("POST /api/v1/loans gestor não pode usar leitor de outra giroteca", async () => {
+  const outraGiroteca = await criarGiroteca();
+  const livro = await criarLivro({ titulo: "T", autores: "A" });
+  const exemplar = await criarExemplar(livro.id, girotecaId);
+  const leitorOutra = await criarLeitor(outraGiroteca.id, { nome: "Externo" });
+
+  const res = await fetch("http://localhost:3000/api/v1/loans", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: gestorCookie },
+    body: JSON.stringify({
+      exemplarId: exemplar.id,
+      leitorId: leitorOutra.id,
+    }),
+  });
+
+  expect(res.status).toBe(403);
 });

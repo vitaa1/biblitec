@@ -35,10 +35,9 @@ export async function POST(request: Request) {
     return Response.json(emprestimo, { status: 201 });
   } catch (error) {
     if (error instanceof AppError) {
-      return Response.json(
-        { error: error.message },
-        { status: error.status_code },
-      );
+      const resp: Record<string, string> = { error: error.message };
+      if (error.code) resp.code = error.code;
+      return Response.json(resp, { status: error.status_code });
     }
     console.error(error);
     return Response.json(

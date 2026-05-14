@@ -14,6 +14,7 @@ export async function criar(
   input: {
     exemplarId: string;
     leitorId: string;
+    dataPrevistaDevolucao?: Date;
     observacoes?: string;
   },
   contexto: Contexto,
@@ -35,7 +36,11 @@ export async function criar(
     }
 
     if (exemplar.status !== "disponivel") {
-      throw new AppError("Exemplar não disponível para empréstimo.", 409);
+      throw new AppError(
+        "Exemplar não disponível para empréstimo.",
+        409,
+        "EXEMPLAR_INDISPONIVEL",
+      );
     }
 
     const [leitor] = await tx
@@ -44,7 +49,16 @@ export async function criar(
       .where(eq(leitores.id, input.leitorId));
 
     if (!leitor) throw new AppError("Leitor não encontrado.", 404);
-    if (!leitor.ativo) throw new AppError("Leitor inativo.", 409);
+
+    if (
+      contexto.papel === "gestor_giroteca" &&
+      leitor.girotecaId !== contexto.girotecaId
+    ) {
+      throw new AppError("Não autorizado.", 403);
+    }
+
+    if (!leitor.ativo)
+      throw new AppError("Leitor inativo.", 409, "LEITOR_INATIVO");
 
     const [{ total }] = await tx
       .select({ total: count() })
@@ -60,6 +74,7 @@ export async function criar(
       throw new AppError(
         "Leitor já possui o máximo de empréstimos em aberto.",
         409,
+        "LEITOR_LIMITE_ATINGIDO",
       );
     }
 
@@ -76,16 +91,43 @@ export async function criar(
       );
 
     if (atrasado) {
-      throw new AppError("Leitor possui empréstimo em atraso.", 409);
+      throw new AppError(
+        "Leitor possui empréstimo em atraso.",
+        409,
+        "LEITOR_COM_ATRASO",
+      );
+    }
+
+    let dataPrevistaDevolucao: Date;
+    if (input.dataPrevistaDevolucao) {
+      // z.coerce.date() produz UTC midnight; comparar em UTC para evitar bug de timezone
+      // (ex.: Teresina UTC-3 rejeitaria a data de hoje nas primeiras 3h do dia)
+      const inicioHojeUtc = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      );
+      const limiteMaxUtc = new Date(inicioHojeUtc);
+      limiteMaxUtc.setUTCDate(limiteMaxUtc.getUTCDate() + 60);
+      if (
+        input.dataPrevistaDevolucao < inicioHojeUtc ||
+        input.dataPrevistaDevolucao > limiteMaxUtc
+      ) {
+        throw new AppError(
+          "Data de devolução fora do permitido (hoje até 60 dias).",
+          400,
+        );
+      }
+      dataPrevistaDevolucao = input.dataPrevistaDevolucao;
+    } else {
+      dataPrevistaDevolucao = new Date(now);
+      dataPrevistaDevolucao.setDate(
+        dataPrevistaDevolucao.getDate() + DIAS_PRAZO,
+      );
     }
 
     await tx
       .update(exemplares)
       .set({ status: "emprestado", atualizadoEm: now })
       .where(eq(exemplares.id, input.exemplarId));
-
-    const dataPrevistaDevolucao = new Date(now);
-    dataPrevistaDevolucao.setDate(dataPrevistaDevolucao.getDate() + DIAS_PRAZO);
 
     const [row] = await tx
       .insert(emprestimos)
