@@ -1,11 +1,9 @@
 import { AppError } from "infra/errors";
+import { UUID_REGEX } from "infra/schemas";
 import { contextoFromRequest } from "lib/contexto";
 import { desativar } from "models/leitores";
 
 type Params = Promise<{ id: string }>;
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request, { params }: { params: Params }) {
   try {
@@ -18,9 +16,15 @@ export async function POST(request: Request, { params }: { params: Params }) {
     return new Response(null, { status: 204 });
   } catch (error) {
     if (error instanceof AppError) {
-      return Response.json({ error: error.message }, { status: error.status_code });
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

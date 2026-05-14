@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -64,6 +64,22 @@ export function DesativarLeitorDialog({
             mais nas buscas e não poderá fazer novos empréstimos.
           </DialogDescription>
         </DialogHeader>
+
+        {leitor && leitor.emprestimosEmAberto > 0 && (
+          <div className="flex items-start gap-2 rounded-md bg-amber-50 px-3 py-2.5 text-sm text-amber-800">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Este leitor tem{" "}
+              <strong>
+                {leitor.emprestimosEmAberto}{" "}
+                {leitor.emprestimosEmAberto === 1
+                  ? "empréstimo em aberto"
+                  : "empréstimos em aberto"}
+              </strong>
+              . Os livros continuarão registrados no histórico.
+            </span>
+          </div>
+        )}
 
         {erro && (
           <p className="text-sm text-red-600" role="alert">

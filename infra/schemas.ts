@@ -93,6 +93,9 @@ export const createGirotecaSchema = z.object({
   endereco: z.string().optional(),
 });
 
+export const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function parseBody<T>(
   schema: z.ZodSchema<T>,
   data: unknown,

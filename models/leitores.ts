@@ -1,8 +1,10 @@
 import { and, count, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 import { db } from "db/index";
 import { leitores } from "db/schema";
-import { AppError } from "infra/errors";
+import { AppError, isDuplicateConstraint } from "infra/errors";
 import type { Contexto } from "lib/auth";
+
+const MATRICULA_CONSTRAINT = "leitores_matricula_giroteca_idx";
 
 export type Leitor = typeof leitores.$inferSelect;
 
@@ -129,30 +131,22 @@ export async function criar(
     throw new AppError("Não autorizado.", 403);
   }
 
-  if (input.matricula) {
-    const [existe] = await db
-      .select({ id: leitores.id })
-      .from(leitores)
-      .where(
-        and(
-          eq(leitores.girotecaId, input.girotecaId),
-          eq(leitores.matricula, input.matricula),
-        ),
-      );
-    if (existe) {
+  try {
+    const [row] = await db
+      .insert(leitores)
+      .values({ tipo: "aluno", ativo: true, ...input })
+      .returning();
+    return row;
+  } catch (err) {
+    if (isDuplicateConstraint(err, MATRICULA_CONSTRAINT)) {
       throw new AppError(
         "Já existe um leitor com esta matrícula nesta giroteca.",
         409,
         "MATRICULA_DUPLICADA",
       );
     }
+    throw err;
   }
-
-  const [row] = await db
-    .insert(leitores)
-    .values({ tipo: "aluno", ativo: true, ...input })
-    .returning();
-  return row;
 }
 
 export async function atualizar(
@@ -173,37 +167,26 @@ export async function atualizar(
     throw new AppError("Não autorizado.", 403);
   }
 
-  if (input.matricula && input.matricula !== existente.matricula) {
-    const [existe] = await db
-      .select({ id: leitores.id })
-      .from(leitores)
-      .where(
-        and(
-          eq(leitores.girotecaId, existente.girotecaId),
-          eq(leitores.matricula, input.matricula),
-        ),
-      );
-    if (existe) {
+  try {
+    const [updated] = await db
+      .update(leitores)
+      .set({ ...input, atualizadoEm: new Date() })
+      .where(eq(leitores.id, id))
+      .returning();
+    return updated;
+  } catch (err) {
+    if (isDuplicateConstraint(err, MATRICULA_CONSTRAINT)) {
       throw new AppError(
         "Já existe um leitor com esta matrícula nesta giroteca.",
         409,
         "MATRICULA_DUPLICADA",
       );
     }
+    throw err;
   }
-
-  const [updated] = await db
-    .update(leitores)
-    .set({ ...input, atualizadoEm: new Date() })
-    .where(eq(leitores.id, id))
-    .returning();
-  return updated;
 }
 
-export async function desativar(
-  id: string,
-  contexto: Contexto,
-): Promise<void> {
+export async function desativar(id: string, contexto: Contexto): Promise<void> {
   const [existente] = await db
     .select()
     .from(leitores)

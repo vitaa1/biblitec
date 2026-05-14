@@ -1,12 +1,9 @@
 import { AppError } from "infra/errors";
-import { updateLeitorSchema, parseBody } from "infra/schemas";
+import { updateLeitorSchema, parseBody, UUID_REGEX } from "infra/schemas";
 import { contextoFromRequest } from "lib/contexto";
 import { atualizar } from "models/leitores";
 
 type Params = Promise<{ id: string }>;
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function PUT(request: Request, { params }: { params: Params }) {
   try {
@@ -29,6 +26,9 @@ export async function PUT(request: Request, { params }: { params: Params }) {
       return Response.json(resp, { status: error.status_code });
     }
     console.error(error);
-    return Response.json({ error: "Erro interno do servidor." }, { status: 500 });
+    return Response.json(
+      { error: "Erro interno do servidor." },
+      { status: 500 },
+    );
   }
 }

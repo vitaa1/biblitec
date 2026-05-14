@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type { LeitorComContadores } from "models/leitores";
 import { LeitorDialog } from "./leitor-dialog";
 import { DesativarLeitorDialog } from "./desativar-leitor-dialog";
@@ -133,16 +134,22 @@ export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
               Gerencie os leitores da giroteca
             </p>
           </div>
-          <Button onClick={abrirNovoLeitor}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo leitor
-          </Button>
+          {girotecaId && (
+            <Button onClick={abrirNovoLeitor}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo leitor
+            </Button>
+          )}
         </div>
 
         <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="relative">
+            <Label htmlFor="busca-leitores" className="sr-only">
+              Buscar leitores
+            </Label>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <Input
+              id="busca-leitores"
               className="pl-9"
               placeholder="Buscar por nome ou matrícula…"
               onChange={(e) => handleBusca(e.target.value)}
@@ -301,7 +308,7 @@ export function LeitorList({ initialData, girotecaId }: LeitorListProps) {
                 Anterior
               </Button>
               <span className="text-xs text-gray-500">
-                Página {dados.page} de {dados.totalPages}
+                Página {page} de {dados.totalPages}
               </span>
               <Button
                 size="sm"
