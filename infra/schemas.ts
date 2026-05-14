@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const TELEFONE_REGEX = /^\(\d{2}\) \d{4,5}-\d{4}$/;
+
 export const categoriaLivroSchema = z.enum([
   "Infantil",
   "Juvenil",
@@ -25,22 +27,50 @@ export const createLivroSchema = z.object({
 export const updateLivroSchema = createLivroSchema.partial();
 
 export const createLeitorSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório."),
+  nome: z.string().min(1, "Nome é obrigatório.").max(255),
   girotecaId: z.uuid("girotecaId deve ser um UUID válido."),
   tipo: z.enum(["aluno", "professor", "funcionario"]).optional(),
-  matricula: z.string().optional(),
-  turma: z.string().optional(),
-  telefone: z.string().optional(),
-  responsavel: z.string().optional(),
+  matricula: z
+    .string()
+    .max(50, "Matrícula deve ter no máximo 50 caracteres.")
+    .optional(),
+  turma: z
+    .string()
+    .max(100, "Turma deve ter no máximo 100 caracteres.")
+    .optional(),
+  telefone: z
+    .string()
+    .regex(TELEFONE_REGEX, "Formato inválido. Use (XX) XXXXX-XXXX.")
+    .optional(),
+  responsavel: z
+    .string()
+    .max(255, "Responsável deve ter no máximo 255 caracteres.")
+    .optional(),
 });
 
 export const updateLeitorSchema = z.object({
-  nome: z.string().min(1, "Nome é obrigatório.").optional(),
+  nome: z.string().min(1, "Nome é obrigatório.").max(255).optional(),
   tipo: z.enum(["aluno", "professor", "funcionario"]).optional(),
-  matricula: z.string().optional().nullable(),
-  turma: z.string().optional().nullable(),
-  telefone: z.string().optional().nullable(),
-  responsavel: z.string().optional().nullable(),
+  matricula: z
+    .string()
+    .max(50, "Matrícula deve ter no máximo 50 caracteres.")
+    .optional()
+    .nullable(),
+  turma: z
+    .string()
+    .max(100, "Turma deve ter no máximo 100 caracteres.")
+    .optional()
+    .nullable(),
+  telefone: z
+    .string()
+    .regex(TELEFONE_REGEX, "Formato inválido. Use (XX) XXXXX-XXXX.")
+    .optional()
+    .nullable(),
+  responsavel: z
+    .string()
+    .max(255, "Responsável deve ter no máximo 255 caracteres.")
+    .optional()
+    .nullable(),
 });
 
 export const createEmprestimoSchema = z.object({
