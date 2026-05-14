@@ -108,6 +108,10 @@ export const baixarExemplarSchema = z.object({
   }),
 });
 
+export const devolverEmprestimoSchema = z.object({
+  estadoRetorno: z.enum(["bom", "regular", "danificado"]).optional(),
+});
+
 export const createGirotecaSchema = z.object({
   codigo: z
     .string()

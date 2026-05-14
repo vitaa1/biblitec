@@ -245,3 +245,43 @@ test("listarAtrasados() retorna apenas empréstimos em atraso da giroteca", asyn
   const atrasados = await listarAtrasados(ctxGestorA);
   expect(atrasados).toHaveLength(1);
 });
+
+test("devolver() com estadoRetorno atualiza exemplares.estado", async () => {
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaA.id); // estado padrão: "bom"
+  const leitor = await criarLeitor(girotecaA.id);
+  const emp = await criar(
+    { exemplarId: exemplar.id, leitorId: leitor.id },
+    ctxGestorA,
+  );
+
+  await devolver(emp.id, ctxGestorA, { estadoRetorno: "danificado" });
+
+  const { exemplares: exTable } = await import("db/schema");
+  const [ex] = await db
+    .select()
+    .from(exTable)
+    .where(eq(exTable.id, exemplar.id));
+  expect(ex.status).toBe("disponivel");
+  expect(ex.estado).toBe("danificado");
+});
+
+test("devolver() sem estadoRetorno não altera exemplares.estado", async () => {
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaA.id); // estado padrão: "bom"
+  const leitor = await criarLeitor(girotecaA.id);
+  const emp = await criar(
+    { exemplarId: exemplar.id, leitorId: leitor.id },
+    ctxGestorA,
+  );
+
+  await devolver(emp.id, ctxGestorA);
+
+  const { exemplares: exTable } = await import("db/schema");
+  const [ex] = await db
+    .select()
+    .from(exTable)
+    .where(eq(exTable.id, exemplar.id));
+  expect(ex.status).toBe("disponivel");
+  expect(ex.estado).toBe("bom"); // inalterado
+});

@@ -147,6 +147,7 @@ export async function criar(
 export async function devolver(
   id: string,
   contexto: Contexto,
+  opcoes?: { estadoRetorno?: "bom" | "regular" | "danificado" },
 ): Promise<Emprestimo> {
   return db.transaction(async (tx) => {
     const [emprestimo] = await tx
@@ -175,7 +176,11 @@ export async function devolver(
     const now = new Date();
     await tx
       .update(exemplares)
-      .set({ status: "disponivel", atualizadoEm: now })
+      .set({
+        status: "disponivel",
+        atualizadoEm: now,
+        ...(opcoes?.estadoRetorno ? { estado: opcoes.estadoRetorno } : {}),
+      })
       .where(eq(exemplares.id, emprestimo.exemplarId));
 
     const [updated] = await tx
