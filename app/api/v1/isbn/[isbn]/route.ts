@@ -7,6 +7,7 @@ async function buscarBrasilApi(isbn: string): Promise<IsbnLookupResult | null> {
   try {
     const res = await fetch(`https://brasilapi.com.br/api/isbn/v1/${isbn}`, {
       next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return null;
 
@@ -34,7 +35,7 @@ async function buscarOpenLibrary(
   try {
     const res = await fetch(
       `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
-      { next: { revalidate: 86400 } },
+      { next: { revalidate: 86400 }, signal: AbortSignal.timeout(4000) },
     );
     if (!res.ok) return null;
 
@@ -77,7 +78,7 @@ async function buscarGoogleBooks(
   try {
     const res = await fetch(
       `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`,
-      { next: { revalidate: 86400 } },
+      { next: { revalidate: 86400 }, signal: AbortSignal.timeout(4000) },
     );
     if (!res.ok) return null;
 
