@@ -1,0 +1,1 @@
+ALTER TABLE "leitores" ALTER COLUMN "matricula" DROP NOT NULL;

@@ -162,7 +162,7 @@ export const leitores = pgTable(
       .notNull()
       .references(() => girotecas.id, { onDelete: "restrict" }),
     nome: varchar("nome", { length: 255 }).notNull(),
-    matricula: varchar("matricula", { length: 50 }).notNull(),
+    matricula: varchar("matricula", { length: 50 }),
     turma: varchar("turma", { length: 100 }),
     tipo: tipoLeitorEnum("tipo").notNull().default("aluno"),
     telefone: varchar("telefone", { length: 20 }),

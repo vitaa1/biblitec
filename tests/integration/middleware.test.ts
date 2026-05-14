@@ -53,12 +53,12 @@ beforeEach(async () => {
 
 test("C1: gestor acessa leitores da própria giroteca → 200", async () => {
   await criarLeitor(girotecaAId);
-  const r = await fetch(`${BASE}/api/v1/students`, {
+  const r = await fetch(`${BASE}/api/v1/leitores`, {
     headers: { Cookie: gestorACookie },
   });
   expect(r.status).toBe(200);
-  const lista = await r.json();
-  expect(Array.isArray(lista)).toBe(true);
+  const body = await r.json();
+  expect(Array.isArray(body.leitores)).toBe(true);
 });
 
 test("C1: gestor acessa emprestimos da própria giroteca → 200", async () => {
@@ -76,11 +76,12 @@ test("C1: gestor acessa emprestimos da própria giroteca → 200", async () => {
 test("C2: gestor A não vê leitores da giroteca B (filtrado em models)", async () => {
   const leitorA = await criarLeitor(girotecaAId);
   const leitorB = await criarLeitor(girotecaBId);
-  const r = await fetch(`${BASE}/api/v1/students`, {
+  const r = await fetch(`${BASE}/api/v1/leitores`, {
     headers: { Cookie: gestorACookie },
   });
   expect(r.status).toBe(200);
-  const ids = ((await r.json()) as Array<{ id: string }>).map((l) => l.id);
+  const { leitores } = (await r.json()) as { leitores: Array<{ id: string }> };
+  const ids = leitores.map((l) => l.id);
   expect(ids).toContain(leitorA.id);
   expect(ids).not.toContain(leitorB.id);
 });
@@ -106,11 +107,12 @@ test("C3: admin acessa /admin/girotecas sem redirect", async () => {
 test("C3: admin vê leitores de todas as girotecas", async () => {
   const leitorA = await criarLeitor(girotecaAId);
   const leitorB = await criarLeitor(girotecaBId);
-  const r = await fetch(`${BASE}/api/v1/students`, {
+  const r = await fetch(`${BASE}/api/v1/leitores`, {
     headers: { Cookie: adminCookie },
   });
   expect(r.status).toBe(200);
-  const ids = ((await r.json()) as Array<{ id: string }>).map((l) => l.id);
+  const { leitores } = (await r.json()) as { leitores: Array<{ id: string }> };
+  const ids = leitores.map((l) => l.id);
   expect(ids).toContain(leitorA.id);
   expect(ids).toContain(leitorB.id);
 });

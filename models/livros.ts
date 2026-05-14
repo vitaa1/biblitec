@@ -33,6 +33,20 @@ export async function buscarComFiltros(
 
   const conds: SQL[] = [isNull(livros.deletadoEm)];
 
+  // Gestor vê livros centrais + livros locais criados pela própria giroteca.
+  // Sem esse filtro, livros locais de outras girotecas apareceriam com 0 exemplares.
+  if (contexto.papel === "gestor_giroteca") {
+    conds.push(
+      or(
+        eq(livros.origem, "central"),
+        and(
+          eq(livros.origem, "local"),
+          eq(livros.criadoPorGirotecaId, contexto.girotecaId!),
+        ),
+      ) as SQL,
+    );
+  }
+
   if (filtros.isbn) {
     conds.push(eq(livros.isbn, filtros.isbn.replace(/-/g, "")));
   } else if (filtros.q) {
