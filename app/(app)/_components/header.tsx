@@ -7,6 +7,7 @@ import { logoutAction } from "../actions";
 export async function AppHeader() {
   const contexto = await contextoFromServerComponent();
   const usuario = await buscarProprioPerfil(contexto);
+  const isGestor = contexto.papel === "gestor_giroteca";
 
   return (
     <header className="border-b border-gray-200 bg-white">
@@ -20,18 +21,22 @@ export async function AppHeader() {
             >
               Catálogo
             </Link>
-            <Link
-              href="/emprestimos"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Empréstimos
-            </Link>
-            <Link
-              href="/devolucoes"
-              className="text-sm text-gray-600 hover:text-gray-900"
-            >
-              Devoluções
-            </Link>
+            {isGestor && (
+              <>
+                <Link
+                  href="/emprestimos"
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Empréstimos
+                </Link>
+                <Link
+                  href="/devolucoes"
+                  className="text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Devoluções
+                </Link>
+              </>
+            )}
             <Link
               href="/leitores"
               className="text-sm text-gray-600 hover:text-gray-900"

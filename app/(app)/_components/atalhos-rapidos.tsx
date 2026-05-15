@@ -1,15 +1,25 @@
 import Link from "next/link";
 
-const ATALHOS = [
+const ATALHOS_GESTOR = [
   { label: "+ Novo empréstimo", href: "/emprestimos/novo" },
-  { label: "↩ Devolução", href: "/emprestimos?aba=devolucao" },
+  { label: "↩ Devolução", href: "/devolucoes" },
   { label: "+ Cadastrar leitor", href: "/leitores/novo" },
 ] as const;
 
-export function AtalhosRapidos() {
+const ATALHOS_ADMIN = [
+  { label: "+ Cadastrar leitor", href: "/leitores/novo" },
+] as const;
+
+interface AtalhosRapidosProps {
+  isGestor: boolean;
+}
+
+export function AtalhosRapidos({ isGestor }: AtalhosRapidosProps) {
+  const atalhos = isGestor ? ATALHOS_GESTOR : ATALHOS_ADMIN;
+
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      {ATALHOS.map((atalho) => (
+      {atalhos.map((atalho) => (
         <Link
           key={atalho.href}
           href={atalho.href}
