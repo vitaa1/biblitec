@@ -43,6 +43,13 @@
       "when": 1778720970778,
       "tag": "0005_complex_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778807138677,
+      "tag": "0006_fixed_stardust",
+      "breakpoints": true
     }
   ]
 }

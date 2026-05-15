@@ -21,7 +21,7 @@ export async function AppHeader() {
               Catálogo
             </Link>
             <Link
-              href="/emprestimos/novo"
+              href="/emprestimos"
               className="text-sm text-gray-600 hover:text-gray-900"
             >
               Empréstimos

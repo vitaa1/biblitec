@@ -1,14 +1,25 @@
-import { and, count, eq, isNull, lt } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  isNotNull,
+  isNull,
+  lt,
+  or,
+} from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, leitores, livros } from "db/schema";
 import { AppError } from "infra/errors";
 import type { Contexto } from "lib/auth";
+import { DIAS_PRAZO, MAX_RENOVACOES } from "lib/emprestimos-config";
+
+export { MAX_RENOVACOES };
 
 export type Emprestimo = typeof emprestimos.$inferSelect;
 
 const MAX_EMPRESTIMOS_ATIVOS = 3;
-const MAX_RENOVACOES = 2;
-const DIAS_PRAZO = 14;
 
 export async function criar(
   input: {
@@ -438,5 +449,197 @@ export async function buscarParaDevolucao(
       dataEmprestimo: dadosEmprestimo.dataEmprestimo,
       dataPrevistaDevolucao: dadosEmprestimo.dataPrevistaDevolucao,
     },
+  };
+}
+
+// ─── Listagem ────────────────────────────────────────────────────────────────
+
+export type EmprestimoListagem = {
+  id: string;
+  leitor: { nome: string; turma: string | null; matricula: string | null };
+  livro: { titulo: string };
+  exemplar: { codigoTombamento: string };
+  dataEmprestimo: Date;
+  dataPrevistaDevolucao: Date;
+  dataDevolucao: Date | null;
+  renovacoes: number;
+};
+
+export type FiltrosListagem = {
+  aba: "em_aberto" | "atrasados";
+  busca?: string;
+  turma?: string;
+  page?: number;
+};
+
+export type ResultadoListagem = {
+  items: EmprestimoListagem[];
+  totalEmAberto: number;
+  totalAtrasados: number;
+};
+
+export type FiltrosHistorico = {
+  busca?: string;
+  turma?: string;
+  page?: number;
+};
+
+export type ResultadoHistorico = {
+  items: EmprestimoListagem[];
+  total: number;
+};
+
+const LISTAGEM_POR_PAGINA = 50;
+const HIST_POR_PAGINA = 20;
+
+const listSelect = {
+  id: emprestimos.id,
+  dataEmprestimo: emprestimos.dataEmprestimo,
+  dataPrevistaDevolucao: emprestimos.dataPrevistaDevolucao,
+  dataDevolucao: emprestimos.dataDevolucao,
+  renovacoes: emprestimos.renovacoes,
+  leitorNome: leitores.nome,
+  leitorTurma: leitores.turma,
+  leitorMatricula: leitores.matricula,
+  livroTitulo: livros.titulo,
+  exemplarCodigo: exemplares.codigoTombamento,
+};
+
+function mapListagem(row: {
+  id: string;
+  dataEmprestimo: Date;
+  dataPrevistaDevolucao: Date;
+  dataDevolucao: Date | null;
+  renovacoes: number;
+  leitorNome: string;
+  leitorTurma: string | null;
+  leitorMatricula: string | null;
+  livroTitulo: string;
+  exemplarCodigo: string;
+}): EmprestimoListagem {
+  return {
+    id: row.id,
+    leitor: {
+      nome: row.leitorNome,
+      turma: row.leitorTurma,
+      matricula: row.leitorMatricula,
+    },
+    livro: { titulo: row.livroTitulo },
+    exemplar: { codigoTombamento: row.exemplarCodigo },
+    dataEmprestimo: row.dataEmprestimo,
+    dataPrevistaDevolucao: row.dataPrevistaDevolucao,
+    dataDevolucao: row.dataDevolucao,
+    renovacoes: row.renovacoes,
+  };
+}
+
+export async function listarComFiltros(
+  filtros: FiltrosListagem,
+  contexto: Contexto,
+): Promise<ResultadoListagem> {
+  const { aba, busca, turma, page = 1 } = filtros;
+
+  const now = new Date();
+  const hoje = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  const girotecaWhere =
+    contexto.papel === "gestor_giroteca"
+      ? eq(exemplares.girotecaId, contexto.girotecaId!)
+      : undefined;
+
+  const rows = await db
+    .select(listSelect)
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .innerJoin(leitores, eq(emprestimos.leitorId, leitores.id))
+    .innerJoin(livros, eq(exemplares.livroId, livros.id))
+    .where(
+      and(
+        isNull(emprestimos.dataDevolucao),
+        girotecaWhere,
+        aba === "atrasados"
+          ? lt(emprestimos.dataPrevistaDevolucao, hoje)
+          : undefined,
+        busca
+          ? or(
+              ilike(leitores.nome, `%${busca}%`),
+              ilike(leitores.matricula, `%${busca}%`),
+            )
+          : undefined,
+        turma ? eq(leitores.turma, turma) : undefined,
+      ),
+    )
+    .orderBy(emprestimos.dataEmprestimo)
+    .limit(LISTAGEM_POR_PAGINA)
+    .offset((page - 1) * LISTAGEM_POR_PAGINA);
+
+  // Totais globais da giroteca — ignoram busca/turma intencionalmente,
+  // pois os badges nas abas refletem o estado geral, não o filtro ativo.
+  const [{ total: totalEmAberto }] = await db
+    .select({ total: count() })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .where(and(isNull(emprestimos.dataDevolucao), girotecaWhere));
+
+  const [{ total: totalAtrasados }] = await db
+    .select({ total: count() })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .where(
+      and(
+        isNull(emprestimos.dataDevolucao),
+        lt(emprestimos.dataPrevistaDevolucao, hoje),
+        girotecaWhere,
+      ),
+    );
+
+  return {
+    items: rows.map(mapListagem),
+    totalEmAberto: Number(totalEmAberto),
+    totalAtrasados: Number(totalAtrasados),
+  };
+}
+
+export async function listarHistorico(
+  filtros: FiltrosHistorico,
+  contexto: Contexto,
+): Promise<ResultadoHistorico> {
+  const { busca, turma, page = 1 } = filtros;
+
+  const girotecaWhere =
+    contexto.papel === "gestor_giroteca"
+      ? eq(exemplares.girotecaId, contexto.girotecaId!)
+      : undefined;
+
+  const whereClause = and(
+    isNotNull(emprestimos.dataDevolucao),
+    girotecaWhere,
+    busca ? ilike(leitores.nome, `%${busca}%`) : undefined,
+    turma ? eq(leitores.turma, turma) : undefined,
+  );
+
+  const rows = await db
+    .select(listSelect)
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .innerJoin(leitores, eq(emprestimos.leitorId, leitores.id))
+    .innerJoin(livros, eq(exemplares.livroId, livros.id))
+    .where(whereClause)
+    .orderBy(desc(emprestimos.dataDevolucao))
+    .limit(HIST_POR_PAGINA)
+    .offset((page - 1) * HIST_POR_PAGINA);
+
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .innerJoin(leitores, eq(emprestimos.leitorId, leitores.id))
+    .where(whereClause);
+
+  return {
+    items: rows.map(mapListagem),
+    total: Number(total),
   };
 }
