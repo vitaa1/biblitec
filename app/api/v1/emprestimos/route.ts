@@ -9,7 +9,9 @@ export async function GET(request: Request) {
     const aba = searchParams.get("aba");
     const busca = searchParams.get("busca") ?? undefined;
     const turma = searchParams.get("turma") ?? undefined;
-    const page = Number(searchParams.get("page") ?? "1");
+    const pageRaw = Number(searchParams.get("page") ?? "1");
+    const page =
+      Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
 
     if (!aba) {
       return Response.json(

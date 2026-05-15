@@ -1,4 +1,4 @@
-import { MAX_RENOVACOES } from "models/emprestimos";
+import { MAX_RENOVACOES } from "lib/emprestimos-config";
 
 export const EMPRESTIMOS_POR_PAGINA = 50;
 export const HISTORICO_POR_PAGINA = 20;
@@ -47,6 +47,6 @@ export function calcularNovaDataPrevista(
   dataPrevistaDevolucao: string,
 ): string {
   const due = new Date(dataPrevistaDevolucao);
-  due.setDate(due.getDate() + 14);
+  due.setUTCDate(due.getUTCDate() + 14);
   return due.toISOString();
 }

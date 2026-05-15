@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { EmprestimoListagem } from "models/emprestimos";
 import { calcularNovaDataPrevista, formatarData } from "lib/emprestimos";
+import { DIAS_PRAZO } from "lib/emprestimos-config";
 
 interface RenovarDialogProps {
   emprestimo: EmprestimoListagem;
@@ -62,7 +63,7 @@ export function RenovarDialog({
           <DialogTitle>Confirmar renovação</DialogTitle>
           <DialogDescription>
             O empréstimo de <strong>{emprestimo.leitor.nome}</strong> será
-            renovado por mais 14 dias.
+            renovado por mais {DIAS_PRAZO} dias.
           </DialogDescription>
         </DialogHeader>
 

@@ -7,17 +7,19 @@ import {
   isNotNull,
   isNull,
   lt,
+  or,
 } from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, leitores, livros } from "db/schema";
 import { AppError } from "infra/errors";
 import type { Contexto } from "lib/auth";
+import { DIAS_PRAZO, MAX_RENOVACOES } from "lib/emprestimos-config";
+
+export { MAX_RENOVACOES };
 
 export type Emprestimo = typeof emprestimos.$inferSelect;
 
 const MAX_EMPRESTIMOS_ATIVOS = 3;
-export const MAX_RENOVACOES = 2;
-const DIAS_PRAZO = 14;
 
 export async function criar(
   input: {
@@ -560,7 +562,12 @@ export async function listarComFiltros(
         aba === "atrasados"
           ? lt(emprestimos.dataPrevistaDevolucao, hoje)
           : undefined,
-        busca ? ilike(leitores.nome, `%${busca}%`) : undefined,
+        busca
+          ? or(
+              ilike(leitores.nome, `%${busca}%`),
+              ilike(leitores.matricula, `%${busca}%`),
+            )
+          : undefined,
         turma ? eq(leitores.turma, turma) : undefined,
       ),
     )
