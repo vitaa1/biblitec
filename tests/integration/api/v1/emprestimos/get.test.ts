@@ -67,7 +67,10 @@ test("GET /api/v1/emprestimos sem aba retorna 400", async () => {
 test("GET /api/v1/emprestimos?aba=em_aberto retorna empréstimos em aberto", async () => {
   const livro = await criarLivro({ titulo: "O Alquimista" });
   const exemplar = await criarExemplar(livro.id, girotecaAId);
-  const leitor = await criarLeitor(girotecaAId, { nome: "Maria Silva", turma: "5A" });
+  const leitor = await criarLeitor(girotecaAId, {
+    nome: "Maria Silva",
+    turma: "5A",
+  });
   await criarEmprestimo(exemplar.id, leitor.id, usuarioAId);
 
   const res = await fetch(`${BASE}?aba=em_aberto`, {
@@ -100,8 +103,12 @@ test("GET /api/v1/emprestimos gestor A não vê empréstimos da giroteca B", asy
 
 test("GET /api/v1/emprestimos?aba=atrasados retorna apenas vencidos", async () => {
   const livro = await criarLivro();
-  const ex1 = await criarExemplar(livro.id, girotecaAId, { codigoTombamento: "TOC-AT-1" });
-  const ex2 = await criarExemplar(livro.id, girotecaAId, { codigoTombamento: "TOC-AT-2" });
+  const ex1 = await criarExemplar(livro.id, girotecaAId, {
+    codigoTombamento: "TOC-AT-1",
+  });
+  const ex2 = await criarExemplar(livro.id, girotecaAId, {
+    codigoTombamento: "TOC-AT-2",
+  });
   const leitor = await criarLeitor(girotecaAId);
 
   const ontem = new Date();
@@ -129,10 +136,20 @@ test("GET /api/v1/emprestimos?aba=atrasados retorna apenas vencidos", async () =
 
 test("GET /api/v1/emprestimos?aba=em_aberto&busca= filtra por nome do leitor", async () => {
   const livro = await criarLivro();
-  const ex1 = await criarExemplar(livro.id, girotecaAId, { codigoTombamento: "TOC-B1" });
-  const ex2 = await criarExemplar(livro.id, girotecaAId, { codigoTombamento: "TOC-B2" });
-  const leitor1 = await criarLeitor(girotecaAId, { nome: "Ana Lima", matricula: "MAT-G1" });
-  const leitor2 = await criarLeitor(girotecaAId, { nome: "Pedro Costa", matricula: "MAT-G2" });
+  const ex1 = await criarExemplar(livro.id, girotecaAId, {
+    codigoTombamento: "TOC-B1",
+  });
+  const ex2 = await criarExemplar(livro.id, girotecaAId, {
+    codigoTombamento: "TOC-B2",
+  });
+  const leitor1 = await criarLeitor(girotecaAId, {
+    nome: "Ana Lima",
+    matricula: "MAT-G1",
+  });
+  const leitor2 = await criarLeitor(girotecaAId, {
+    nome: "Pedro Costa",
+    matricula: "MAT-G2",
+  });
   await criarEmprestimo(ex1.id, leitor1.id, usuarioAId);
   await criarEmprestimo(ex2.id, leitor2.id, usuarioAId);
 
@@ -148,10 +165,20 @@ test("GET /api/v1/emprestimos?aba=em_aberto&busca= filtra por nome do leitor", a
 
 test("GET /api/v1/emprestimos?aba=em_aberto&turma= filtra por turma", async () => {
   const livro = await criarLivro();
-  const ex1 = await criarExemplar(livro.id, girotecaAId, { codigoTombamento: "TOC-T1" });
-  const ex2 = await criarExemplar(livro.id, girotecaAId, { codigoTombamento: "TOC-T2" });
-  const leitor5A = await criarLeitor(girotecaAId, { turma: "5A", matricula: "MAT-GT1" });
-  const leitor6B = await criarLeitor(girotecaAId, { turma: "6B", matricula: "MAT-GT2" });
+  const ex1 = await criarExemplar(livro.id, girotecaAId, {
+    codigoTombamento: "TOC-T1",
+  });
+  const ex2 = await criarExemplar(livro.id, girotecaAId, {
+    codigoTombamento: "TOC-T2",
+  });
+  const leitor5A = await criarLeitor(girotecaAId, {
+    turma: "5A",
+    matricula: "MAT-GT1",
+  });
+  const leitor6B = await criarLeitor(girotecaAId, {
+    turma: "6B",
+    matricula: "MAT-GT2",
+  });
   await criarEmprestimo(ex1.id, leitor5A.id, usuarioAId);
   await criarEmprestimo(ex2.id, leitor6B.id, usuarioAId);
 

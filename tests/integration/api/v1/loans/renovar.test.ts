@@ -44,7 +44,11 @@ async function criarEmprestimoViaApi() {
     headers: { "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify({ exemplarId, leitorId }),
   });
-  return res.json() as Promise<{ id: string; renovacoes: number; dataPrevistaDevolucao: string }>;
+  return res.json() as Promise<{
+    id: string;
+    renovacoes: number;
+    dataPrevistaDevolucao: string;
+  }>;
 }
 
 test("POST /api/v1/loans/:id/renovar renova e retorna 200 com nova data", async () => {

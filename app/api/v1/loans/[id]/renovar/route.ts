@@ -12,7 +12,10 @@ export async function POST(request: Request, { params }: { params: Params }) {
     return Response.json(emprestimo);
   } catch (error) {
     if (error instanceof AppError) {
-      return Response.json({ error: error.message }, { status: error.status_code });
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
     }
     console.error(error);
     return Response.json({ error: "Erro interno." }, { status: 500 });

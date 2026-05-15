@@ -1,9 +1,6 @@
 import { AppError } from "infra/errors";
 import { contextoFromRequest } from "lib/contexto";
-import {
-  listarComFiltros,
-  listarHistorico,
-} from "models/emprestimos";
+import { listarComFiltros, listarHistorico } from "models/emprestimos";
 
 export async function GET(request: Request) {
   try {
@@ -15,7 +12,10 @@ export async function GET(request: Request) {
     const page = Number(searchParams.get("page") ?? "1");
 
     if (!aba) {
-      return Response.json({ error: "Parâmetro 'aba' é obrigatório." }, { status: 400 });
+      return Response.json(
+        { error: "Parâmetro 'aba' é obrigatório." },
+        { status: 400 },
+      );
     }
 
     if (aba === "em_aberto" || aba === "atrasados") {
@@ -31,10 +31,16 @@ export async function GET(request: Request) {
       return Response.json(resultado);
     }
 
-    return Response.json({ error: "Valor inválido para 'aba'." }, { status: 400 });
+    return Response.json(
+      { error: "Valor inválido para 'aba'." },
+      { status: 400 },
+    );
   } catch (error) {
     if (error instanceof AppError) {
-      return Response.json({ error: error.message }, { status: error.status_code });
+      return Response.json(
+        { error: error.message },
+        { status: error.status_code },
+      );
     }
     console.error(error);
     return Response.json({ error: "Erro interno." }, { status: 500 });

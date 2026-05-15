@@ -1,4 +1,13 @@
-import { and, count, desc, eq, ilike, isNotNull, isNull, lt } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  ilike,
+  isNotNull,
+  isNull,
+  lt,
+} from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, leitores, livros } from "db/schema";
 import { AppError } from "infra/errors";
@@ -508,7 +517,11 @@ function mapListagem(row: {
 }): EmprestimoListagem {
   return {
     id: row.id,
-    leitor: { nome: row.leitorNome, turma: row.leitorTurma, matricula: row.leitorMatricula },
+    leitor: {
+      nome: row.leitorNome,
+      turma: row.leitorTurma,
+      matricula: row.leitorMatricula,
+    },
     livro: { titulo: row.livroTitulo },
     exemplar: { codigoTombamento: row.exemplarCodigo },
     dataEmprestimo: row.dataEmprestimo,
