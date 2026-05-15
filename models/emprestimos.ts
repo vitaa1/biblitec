@@ -663,3 +663,56 @@ export async function listarHistorico(
     total: Number(total),
   };
 }
+
+export async function contarResumoEmprestimos(
+  contexto: Contexto,
+): Promise<{ emAberto: number; atrasados: number }> {
+  const now = new Date();
+  const hoje = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  if (contexto.papel === "admin_nthe") {
+    const [{ emAberto }] = await db
+      .select({ emAberto: count() })
+      .from(emprestimos)
+      .where(isNull(emprestimos.dataDevolucao));
+
+    const [{ atrasados }] = await db
+      .select({ atrasados: count() })
+      .from(emprestimos)
+      .where(
+        and(
+          isNull(emprestimos.dataDevolucao),
+          lt(emprestimos.dataPrevistaDevolucao, hoje),
+        ),
+      );
+
+    return { emAberto: Number(emAberto), atrasados: Number(atrasados) };
+  }
+
+  const [{ emAberto }] = await db
+    .select({ emAberto: count() })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .where(
+      and(
+        isNull(emprestimos.dataDevolucao),
+        eq(exemplares.girotecaId, contexto.girotecaId!),
+      ),
+    );
+
+  const [{ atrasados }] = await db
+    .select({ atrasados: count() })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .where(
+      and(
+        isNull(emprestimos.dataDevolucao),
+        eq(exemplares.girotecaId, contexto.girotecaId!),
+        lt(emprestimos.dataPrevistaDevolucao, hoje),
+      ),
+    );
+
+  return { emAberto: Number(emAberto), atrasados: Number(atrasados) };
+}

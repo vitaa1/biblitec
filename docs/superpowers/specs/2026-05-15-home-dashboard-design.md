@@ -11,6 +11,7 @@ A página é um Server Component em `app/(app)/page.tsx`. Os dados são buscados
 O `app/page.tsx` atual (landing pública com botão "Acessar o sistema") será deletado. O `middleware.ts` já redireciona usuários não autenticados de `/` para `/login`, tornando a landing pública desnecessária.
 
 Fluxo de dados:
+
 ```
 middleware → (autenticado) → app/(app)/page.tsx
                                ↓
@@ -28,10 +29,11 @@ Nova função em `models/emprestimos.ts`:
 ```typescript
 export async function contarResumoEmprestimos(
   contexto: Contexto,
-): Promise<{ emAberto: number; atrasados: number }>
+): Promise<{ emAberto: number; atrasados: number }>;
 ```
 
 **Lógica:**
+
 - `emAberto`: `COUNT(*)` onde `dataDevolucao IS NULL`, filtrado por `girotecaId` quando `gestor_giroteca`
 - `atrasados`: `COUNT(*)` onde `dataDevolucao IS NULL AND dataPrevistaDevolucao < hoje`, filtrado da mesma forma
 - `hoje` calculado como `Date.UTC(...)` para evitar bugs de timezone (UTC-3 de Teresina)
@@ -42,12 +44,12 @@ export async function contarResumoEmprestimos(
 
 ## Components
 
-| Arquivo | Tipo | Responsabilidade |
-|---|---|---|
-| `app/(app)/page.tsx` | Server Component | Busca dados, orquestra layout |
-| `app/(app)/_components/card-resumo.tsx` | TSX puro | Renderiza um card com número grande, rótulo e link |
-| `app/(app)/_components/atalhos-rapidos.tsx` | TSX puro | Renderiza três botões de atalho como `<Link>` |
-| `app/(app)/error.tsx` | Client Component | Boundary de erro com mensagem amigável + retry |
+| Arquivo                                     | Tipo             | Responsabilidade                                   |
+| ------------------------------------------- | ---------------- | -------------------------------------------------- |
+| `app/(app)/page.tsx`                        | Server Component | Busca dados, orquestra layout                      |
+| `app/(app)/_components/card-resumo.tsx`     | TSX puro         | Renderiza um card com número grande, rótulo e link |
+| `app/(app)/_components/atalhos-rapidos.tsx` | TSX puro         | Renderiza três botões de atalho como `<Link>`      |
+| `app/(app)/error.tsx`                       | Client Component | Boundary de erro com mensagem amigável + retry     |
 
 ### Layout (Opção A — aprovado)
 
@@ -64,20 +66,22 @@ export async function contarResumoEmprestimos(
 ```
 
 Cards são clicáveis e navegam para:
+
 - Em aberto → `/emprestimos`
 - Atrasados → `/emprestimos?aba=atrasados`
 
 ### Atalhos
 
-| Rótulo | Destino |
-|---|---|
-| + Novo empréstimo | `/emprestimos/novo` |
-| ↩ Devolução | `/emprestimos?aba=devolucao` |
-| + Cadastrar leitor | `/leitores/novo` |
+| Rótulo             | Destino                      |
+| ------------------ | ---------------------------- |
+| + Novo empréstimo  | `/emprestimos/novo`          |
+| ↩ Devolução        | `/emprestimos?aba=devolucao` |
+| + Cadastrar leitor | `/leitores/novo`             |
 
 ## Error Handling
 
 `app/(app)/error.tsx` captura erros de Server Components. Exibe:
+
 - Mensagem: "Não foi possível carregar os dados da giroteca. Tente novamente."
 - Botão "Tentar novamente" que chama `reset()` do Next.js
 
