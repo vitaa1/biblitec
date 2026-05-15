@@ -5,6 +5,7 @@ Data: 2026-05-15
 ## Contexto
 
 A funcionalidade de renovação de empréstimo tem esqueleto do Milestone 2, mas com lacunas:
+
 - Sem proteção contra race condition (falta transação + SELECT FOR UPDATE)
 - Ordem de validações incorreta
 - Erros sem código tipado na resposta da API
@@ -15,23 +16,23 @@ A funcionalidade de renovação de empréstimo tem esqueleto do Milestone 2, mas
 
 ## Decisões de design
 
-| Ponto | Decisão |
-|---|---|
+| Ponto               | Decisão                                                                       |
+| ------------------- | ----------------------------------------------------------------------------- |
 | Assinatura do model | `renovarEmprestimo(input, contexto)` — alinhado ao padrão `(input, contexto)` |
-| Classe de erro | `AppError` com terceiro argumento `code` — já existe, sem overhead |
-| Path do endpoint | Criar `/api/v1/emprestimos/[id]/renovar`; manter `/loans/` intocado |
-| Botão desabilitado | `disabled` + `title` com explicação, nunca oculto (persona Maria) |
+| Classe de erro      | `AppError` com terceiro argumento `code` — já existe, sem overhead            |
+| Path do endpoint    | Criar `/api/v1/emprestimos/[id]/renovar`; manter `/loans/` intocado           |
+| Botão desabilitado  | `disabled` + `title` com explicação, nunca oculto (persona Maria)             |
 
 ## Arquivos afetados
 
-| Arquivo | Ação |
-|---|---|
-| `models/emprestimos.ts` | Modificar — renomear e melhorar `renovar` |
-| `app/api/v1/emprestimos/[id]/renovar/route.ts` | Criar |
-| `app/api/v1/loans/[id]/renovar/route.ts` | Modificar — atualizar import do model renomeado |
-| `app/(app)/emprestimos/_components/renovar-dialog.tsx` | Modificar |
-| `app/(app)/emprestimos/_components/emprestimo-linha.tsx` | Modificar |
-| `tests/integration/emprestimos/renovar.test.ts` | Criar |
+| Arquivo                                                  | Ação                                            |
+| -------------------------------------------------------- | ----------------------------------------------- |
+| `models/emprestimos.ts`                                  | Modificar — renomear e melhorar `renovar`       |
+| `app/api/v1/emprestimos/[id]/renovar/route.ts`           | Criar                                           |
+| `app/api/v1/loans/[id]/renovar/route.ts`                 | Modificar — atualizar import do model renomeado |
+| `app/(app)/emprestimos/_components/renovar-dialog.tsx`   | Modificar                                       |
+| `app/(app)/emprestimos/_components/emprestimo-linha.tsx` | Modificar                                       |
+| `tests/integration/emprestimos/renovar.test.ts`          | Criar                                           |
 
 ## 1. Model — `models/emprestimos.ts`
 
@@ -43,7 +44,7 @@ type RenovarEmprestimoInput = { emprestimoId: string };
 export async function renovarEmprestimo(
   input: RenovarEmprestimoInput,
   contexto: Contexto,
-): Promise<Emprestimo>
+): Promise<Emprestimo>;
 ```
 
 ### Lógica (dentro de transação com SELECT FOR UPDATE)
@@ -56,7 +57,7 @@ export async function renovarEmprestimo(
 6. Atualizar: `dataPrevistaDevolucao = dataPrevistaDevolucao + 14 dias` (a partir da data atual, não de hoje)
 7. Retornar empréstimo atualizado
 
-**Atenção ao timezone**: a comparação de atraso usa `sql\`${emprestimos.dataPrevistaDevolucao} < CURRENT_DATE\`` para evitar bug de fuso JS. A nova data é calculada em JS a partir de `dataPrevistaDevolucao` atual (não de `new Date()`).
+**Atenção ao timezone**: a comparação de atraso usa `sql\`${emprestimos.dataPrevistaDevolucao} < CURRENT_DATE\``para evitar bug de fuso JS. A nova data é calculada em JS a partir de`dataPrevistaDevolucao`atual (não de`new Date()`).
 
 ## 2. API Route — `app/api/v1/emprestimos/[id]/renovar/route.ts`
 
@@ -97,6 +98,7 @@ Substituir lógica condicional que oculta o botão por lógica que o desabilita:
 ## 4. UI — `RenovarDialog`
 
 Mudanças:
+
 - Título: "Confirmar renovação" → "Renovar empréstimo"
 - Botão primário: "Confirmar renovação" / "Renovando..." → "Renovar empréstimo" / "Renovando..."
 - URL do fetch: `/api/v1/loans/` → `/api/v1/emprestimos/`

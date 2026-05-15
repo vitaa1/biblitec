@@ -12,21 +12,22 @@
 
 ## Mapa de arquivos
 
-| Arquivo | Ação | Responsabilidade |
-|---|---|---|
-| `components/ui/alert.tsx` | Criar (via shadcn CLI) | Componente Alert para erros no dialog |
-| `tests/integration/emprestimos/renovar.test.ts` | Criar | 9 cenários de integração para o novo endpoint |
-| `models/emprestimos.ts` | Modificar | Renomear `renovar` → `renovarEmprestimo`, adicionar transação + SELECT FOR UPDATE, corrigir ordem de checks e codes |
-| `app/api/v1/emprestimos/[id]/renovar/route.ts` | Criar | Endpoint POST que mapeia erros com `{ code, message }` |
-| `app/api/v1/loans/[id]/renovar/route.ts` | Modificar | Atualizar import para `renovarEmprestimo` |
-| `app/(app)/emprestimos/_components/emprestimo-linha.tsx` | Modificar | Botão Renovar sempre visível, desabilitado com tooltip quando inelegível |
-| `app/(app)/emprestimos/_components/renovar-dialog.tsx` | Modificar | Título, botão, URL, Alert para erros, contador de renovações |
+| Arquivo                                                  | Ação                   | Responsabilidade                                                                                                    |
+| -------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `components/ui/alert.tsx`                                | Criar (via shadcn CLI) | Componente Alert para erros no dialog                                                                               |
+| `tests/integration/emprestimos/renovar.test.ts`          | Criar                  | 9 cenários de integração para o novo endpoint                                                                       |
+| `models/emprestimos.ts`                                  | Modificar              | Renomear `renovar` → `renovarEmprestimo`, adicionar transação + SELECT FOR UPDATE, corrigir ordem de checks e codes |
+| `app/api/v1/emprestimos/[id]/renovar/route.ts`           | Criar                  | Endpoint POST que mapeia erros com `{ code, message }`                                                              |
+| `app/api/v1/loans/[id]/renovar/route.ts`                 | Modificar              | Atualizar import para `renovarEmprestimo`                                                                           |
+| `app/(app)/emprestimos/_components/emprestimo-linha.tsx` | Modificar              | Botão Renovar sempre visível, desabilitado com tooltip quando inelegível                                            |
+| `app/(app)/emprestimos/_components/renovar-dialog.tsx`   | Modificar              | Título, botão, URL, Alert para erros, contador de renovações                                                        |
 
 ---
 
 ## Task 1: Instalar componente Alert do shadcn/ui
 
 **Files:**
+
 - Create: `components/ui/alert.tsx`
 
 - [ ] **Step 1: Instalar o componente**
@@ -57,6 +58,7 @@ git commit -m "chore: adiciona componente Alert do shadcn/ui"
 ## Task 2: Escrever testes de integração — 9 cenários (fase vermelha)
 
 **Files:**
+
 - Create: `tests/integration/emprestimos/renovar.test.ts`
 
 - [ ] **Step 1: Criar o arquivo de testes**
@@ -242,7 +244,11 @@ test("cálculo preserva ciclo: vence daqui 4 dias, nova data é daqui 18 dias", 
   // Após renovar, nova data deve ser dia 28 (dia 14 + 14), não dia 24 (hoje + 14)
   const agora = new Date();
   const venceDia14 = new Date(
-    Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 4),
+    Date.UTC(
+      agora.getUTCFullYear(),
+      agora.getUTCMonth(),
+      agora.getUTCDate() + 4,
+    ),
   );
 
   const emp = await criarEmprestimoAtivo({ dataPrevistaDevolucao: venceDia14 });
@@ -263,7 +269,11 @@ test("cálculo preserva ciclo: vence daqui 4 dias, nova data é daqui 18 dias", 
 
   // Sanity: nova data NÃO é hoje + 14 dias
   const hojeMAis14 = new Date(
-    Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), agora.getUTCDate() + 14),
+    Date.UTC(
+      agora.getUTCFullYear(),
+      agora.getUTCMonth(),
+      agora.getUTCDate() + 14,
+    ),
   );
   expect(novaData.getTime()).not.toBe(hojeMAis14.getTime());
 });
@@ -282,6 +292,7 @@ Expected: todos os 9 testes falham com erro 404 ou conexão recusada.
 ## Task 3: Melhorar `renovarEmprestimo` no model
 
 **Files:**
+
 - Modify: `models/emprestimos.ts`
 
 O model atual tem função `renovar(id, contexto)`. Ela será renomeada para `renovarEmprestimo(input, contexto)` e aprimorada.
@@ -293,6 +304,7 @@ A função `renovar` está nas linhas 207–256 de `models/emprestimos.ts`. Ela 
 - [ ] **Step 2: Substituir a função `renovar` pela nova `renovarEmprestimo`**
 
 Localizar o bloco:
+
 ```typescript
 export async function renovar(
   id: string,
@@ -377,7 +389,11 @@ export async function renovarEmprestimo(
     }
 
     if (emprestimo.dataDevolucao !== null) {
-      throw new AppError("Este empréstimo já foi devolvido.", 409, "JA_DEVOLVIDO");
+      throw new AppError(
+        "Este empréstimo já foi devolvido.",
+        409,
+        "JA_DEVOLVIDO",
+      );
     }
 
     const now = new Date();
@@ -430,6 +446,7 @@ Expected: sem erros em `models/emprestimos.ts`.
 ## Task 4: Criar `POST /api/v1/emprestimos/[id]/renovar`
 
 **Files:**
+
 - Create: `app/api/v1/emprestimos/[id]/renovar/route.ts`
 
 - [ ] **Step 1: Criar a estrutura de diretórios**
@@ -449,7 +466,11 @@ import { renovarEmprestimo } from "models/emprestimos";
 
 type Params = Promise<{ id: string }>;
 
-const BUSINESS_CODES = new Set(["JA_DEVOLVIDO", "EM_ATRASO", "LIMITE_RENOVACOES"]);
+const BUSINESS_CODES = new Set([
+  "JA_DEVOLVIDO",
+  "EM_ATRASO",
+  "LIMITE_RENOVACOES",
+]);
 
 export async function POST(request: Request, { params }: { params: Params }) {
   try {
@@ -489,6 +510,7 @@ Expected: sem erros.
 ## Task 5: Atualizar `/loans/[id]/renovar` e rodar todos os testes
 
 **Files:**
+
 - Modify: `app/api/v1/loans/[id]/renovar/route.ts`
 
 - [ ] **Step 1: Atualizar o import no arquivo legado**
@@ -560,6 +582,7 @@ Closes #63 (parcial — UI pendente)"
 ## Task 6: Corrigir `EmprestimoLinha` — disable vs hide
 
 **Files:**
+
 - Modify: `app/(app)/emprestimos/_components/emprestimo-linha.tsx`
 
 O problema: o botão "Renovar" é ocultado quando o empréstimo não é elegível para renovação. Pela persona Maria ("cadê o botão que estava aqui ontem?"), deve ser sempre visível mas desabilitado com explicação.
@@ -575,11 +598,13 @@ import { MAX_RENOVACOES } from "lib/emprestimos-config";
 - [ ] **Step 2: Remover o import de `canRenovar` (não será mais usado)**
 
 A linha de imports de `lib/emprestimos` atual é:
+
 ```typescript
 import { calcularDiasAtraso, formatarData, canRenovar } from "lib/emprestimos";
 ```
 
 Mudar para:
+
 ```typescript
 import { calcularDiasAtraso, formatarData } from "lib/emprestimos";
 ```
@@ -587,6 +612,7 @@ import { calcularDiasAtraso, formatarData } from "lib/emprestimos";
 - [ ] **Step 3: Substituir o bloco condicional do botão Renovar**
 
 Localizar:
+
 ```typescript
 {canRenovar({
   ...emprestimo,
@@ -603,6 +629,7 @@ Localizar:
 ```
 
 Substituir por:
+
 ```typescript
 <Button
   size="sm"
@@ -634,11 +661,13 @@ Expected: sem erros.
 ## Task 7: Corrigir `RenovarDialog` — título, URL, Alert, contador
 
 **Files:**
+
 - Modify: `app/(app)/emprestimos/_components/renovar-dialog.tsx`
 
 - [ ] **Step 1: Atualizar os imports**
 
 Substituir o bloco de imports atual:
+
 ```typescript
 import { useState } from "react";
 import {
@@ -656,6 +685,7 @@ import { DIAS_PRAZO } from "lib/emprestimos-config";
 ```
 
 Por:
+
 ```typescript
 import { useState } from "react";
 import {
@@ -740,11 +770,13 @@ Substituir o conteúdo completo do componente `RenovarDialog` (do `return (` at�
 - [ ] **Step 3: Atualizar a URL do fetch para o novo endpoint**
 
 Localizar:
+
 ```typescript
 const res = await fetch(`/api/v1/loans/${emprestimo.id}/renovar`, {
 ```
 
 Substituir por:
+
 ```typescript
 const res = await fetch(`/api/v1/emprestimos/${emprestimo.id}/renovar`, {
 ```
@@ -752,13 +784,17 @@ const res = await fetch(`/api/v1/emprestimos/${emprestimo.id}/renovar`, {
 - [ ] **Step 4: Atualizar leitura do erro na resposta 409**
 
 O novo endpoint retorna `{ code, message }` para erros de negócio. Localizar:
+
 ```typescript
 setErro(body.error ?? "Não foi possível renovar. Tente novamente.");
 ```
 
 Substituir por:
+
 ```typescript
-setErro(body.message ?? body.error ?? "Não foi possível renovar. Tente novamente.");
+setErro(
+  body.message ?? body.error ?? "Não foi possível renovar. Tente novamente.",
+);
 ```
 
 - [ ] **Step 5: Verificar TypeScript**
