@@ -1,0 +1,1 @@
+ALTER TABLE "livros" ALTER COLUMN "capa_url" SET DATA TYPE text;

@@ -101,7 +101,7 @@ export const livros = pgTable(
     editora: varchar("editora", { length: 255 }),
     anoPublicacao: integer("ano_publicacao"),
     categoria: categoriaLivroEnum("categoria"),
-    capaUrl: varchar("capa_url", { length: 500 }),
+    capaUrl: text("capa_url"),
     descricao: text("descricao"),
     origem: origemLivroEnum("origem").notNull().default("central"),
     criadoPorGirotecaId: uuid("criado_por_giroteca_id").references(
