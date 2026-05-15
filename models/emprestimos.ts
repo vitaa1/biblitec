@@ -676,7 +676,7 @@ export async function contarResumoEmprestimos(
   const [row] = await db
     .select({
       emAberto: count(),
-      atrasados: sql<number>`count(*) filter (where ${emprestimos.dataPrevistaDevolucao} < ${hoje})`,
+      atrasados: sql<string>`count(*) filter (where ${emprestimos.dataPrevistaDevolucao} < ${hoje})`,
     })
     .from(emprestimos)
     .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))

@@ -1,9 +1,9 @@
 import Link from "next/link";
 
 const ATALHOS = [
-  { label: "Novo empréstimo", href: "/emprestimos/novo" },
-  { label: "Devolução", href: "/emprestimos?aba=devolucao" },
-  { label: "Cadastrar leitor", href: "/leitores/novo" },
+  { label: "+ Novo empréstimo", href: "/emprestimos/novo" },
+  { label: "↩ Devolução", href: "/emprestimos?aba=devolucao" },
+  { label: "+ Cadastrar leitor", href: "/leitores/novo" },
 ] as const;
 
 export function AtalhosRapidos() {

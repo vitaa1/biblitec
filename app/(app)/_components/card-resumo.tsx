@@ -18,11 +18,7 @@ export function CardResumo({
   return (
     <Link
       href={href}
-      aria-label={
-        destaque
-          ? `${titulo}: ${valor} (atenção necessária)`
-          : `${titulo}: ${valor}`
-      }
+      aria-label={`${titulo}: ${valor}${destaque ? " — atenção necessária" : ""}`}
       className={`block rounded-lg border p-6 text-center transition-colors hover:bg-gray-50 ${
         destaque ? "border-2 border-red-600" : "border border-gray-200"
       }`}
