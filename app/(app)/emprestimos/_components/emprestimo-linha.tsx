@@ -108,7 +108,11 @@ export function EmprestimoLinha({
             <Button
               size="sm"
               variant="outline"
-              disabled={atrasado || emprestimo.renovacoes >= MAX_RENOVACOES}
+              disabled={
+                !!emprestimo.dataDevolucao ||
+                atrasado ||
+                emprestimo.renovacoes >= MAX_RENOVACOES
+              }
               title={
                 atrasado
                   ? "Empréstimos em atraso não podem ser renovados"

@@ -28,6 +28,8 @@ export function RenovarDialog({
 }: RenovarDialogProps) {
   const [renovando, setRenovando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Erros de negócio (409) são permanentes — impedir nova tentativa
+  const [erroPermanente, setErroPermanente] = useState(false);
 
   const dataAtualStr = emprestimo.dataPrevistaDevolucao.toISOString();
   const novaData = calcularNovaDataPrevista(dataAtualStr);
@@ -35,6 +37,7 @@ export function RenovarDialog({
   async function handleRenovar() {
     setRenovando(true);
     setErro(null);
+    setErroPermanente(false);
     try {
       const res = await fetch(`/api/v1/emprestimos/${emprestimo.id}/renovar`, {
         method: "POST",
@@ -48,6 +51,7 @@ export function RenovarDialog({
             body.error ??
             "Não foi possível renovar. Tente novamente.",
         );
+        if (res.status === 409) setErroPermanente(true);
       }
     } catch {
       setErro("Erro de conexão. Tente novamente.");
@@ -104,7 +108,7 @@ export function RenovarDialog({
           <Button variant="outline" onClick={onClose} disabled={renovando}>
             Cancelar
           </Button>
-          {!erro && (
+          {!erroPermanente && (
             <Button onClick={handleRenovar} disabled={renovando}>
               {renovando ? "Renovando..." : "Renovar empréstimo"}
             </Button>

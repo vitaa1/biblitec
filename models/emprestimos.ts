@@ -253,7 +253,7 @@ export async function renovarEmprestimo(
 
     if (emprestimo.renovacoes >= MAX_RENOVACOES) {
       throw new AppError(
-        "Este empréstimo já foi renovado 2 vezes. Registre a devolução.",
+        `Este empréstimo já foi renovado ${MAX_RENOVACOES} vezes. Registre a devolução.`,
         409,
         "LIMITE_RENOVACOES",
       );
