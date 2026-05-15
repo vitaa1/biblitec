@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 const ATALHOS = [
-  { label: "+ Novo empréstimo", href: "/emprestimos/novo" },
-  { label: "↩ Devolução", href: "/emprestimos?aba=devolucao" },
-  { label: "+ Cadastrar leitor", href: "/leitores/novo" },
+  { label: "Novo empréstimo", href: "/emprestimos/novo" },
+  { label: "Devolução", href: "/emprestimos?aba=devolucao" },
+  { label: "Cadastrar leitor", href: "/leitores/novo" },
 ] as const;
 
 export function AtalhosRapidos() {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {ATALHOS.map((atalho) => (
         <Link
           key={atalho.href}

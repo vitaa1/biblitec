@@ -1,11 +1,18 @@
 "use client";
 
+import { useEffect } from "react";
+
 export default function Error({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <div className="rounded-lg border border-gray-200 p-8 text-center">

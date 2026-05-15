@@ -8,6 +8,7 @@ import {
   isNull,
   lt,
   or,
+  sql,
 } from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, leitores, livros } from "db/schema";
@@ -672,47 +673,21 @@ export async function contarResumoEmprestimos(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
   );
 
-  if (contexto.papel === "admin_nthe") {
-    const [{ emAberto }] = await db
-      .select({ emAberto: count() })
-      .from(emprestimos)
-      .where(isNull(emprestimos.dataDevolucao));
-
-    const [{ atrasados }] = await db
-      .select({ atrasados: count() })
-      .from(emprestimos)
-      .where(
-        and(
-          isNull(emprestimos.dataDevolucao),
-          lt(emprestimos.dataPrevistaDevolucao, hoje),
-        ),
-      );
-
-    return { emAberto: Number(emAberto), atrasados: Number(atrasados) };
-  }
-
-  const [{ emAberto }] = await db
-    .select({ emAberto: count() })
+  const [row] = await db
+    .select({
+      emAberto: count(),
+      atrasados: sql<number>`count(*) filter (where ${emprestimos.dataPrevistaDevolucao} < ${hoje})`,
+    })
     .from(emprestimos)
     .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
     .where(
       and(
         isNull(emprestimos.dataDevolucao),
-        eq(exemplares.girotecaId, contexto.girotecaId!),
+        contexto.papel === "gestor_giroteca"
+          ? eq(exemplares.girotecaId, contexto.girotecaId!)
+          : undefined,
       ),
     );
 
-  const [{ atrasados }] = await db
-    .select({ atrasados: count() })
-    .from(emprestimos)
-    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
-    .where(
-      and(
-        isNull(emprestimos.dataDevolucao),
-        eq(exemplares.girotecaId, contexto.girotecaId!),
-        lt(emprestimos.dataPrevistaDevolucao, hoje),
-      ),
-    );
-
-  return { emAberto: Number(emAberto), atrasados: Number(atrasados) };
+  return { emAberto: Number(row.emAberto), atrasados: Number(row.atrasados) };
 }

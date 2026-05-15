@@ -57,6 +57,19 @@ test("admin vê soma de todas as girotecas", async () => {
   expect(resultado.emAberto).toBe(2);
 });
 
+test("admin vê atrasados de todas as girotecas", async () => {
+  const passado = new Date(Date.UTC(2000, 0, 1));
+  await criarEmprestimoNaGiroteca(girotecaA.id, ctxAdmin.usuarioId, {
+    dataPrevistaDevolucao: passado,
+  });
+  await criarEmprestimoNaGiroteca(girotecaB.id, ctxAdmin.usuarioId, {
+    dataPrevistaDevolucao: passado,
+  });
+
+  const resultado = await contarResumoEmprestimos(ctxAdmin);
+  expect(resultado.atrasados).toBe(2);
+});
+
 test("gestor vê apenas sua giroteca", async () => {
   await criarEmprestimoNaGiroteca(girotecaA.id, ctxAdmin.usuarioId);
   await criarEmprestimoNaGiroteca(girotecaB.id, ctxAdmin.usuarioId);
