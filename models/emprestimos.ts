@@ -204,55 +204,75 @@ export async function devolver(
   });
 }
 
-export async function renovar(
-  id: string,
+export async function renovarEmprestimo(
+  input: { emprestimoId: string },
   contexto: Contexto,
 ): Promise<Emprestimo> {
-  const [emprestimo] = await db
-    .select()
-    .from(emprestimos)
-    .where(and(eq(emprestimos.id, id), isNull(emprestimos.dataDevolucao)));
+  return db.transaction(async (tx) => {
+    // SELECT FOR UPDATE previne race condition em renovações concorrentes
+    const [emprestimo] = await tx
+      .select()
+      .from(emprestimos)
+      .where(eq(emprestimos.id, input.emprestimoId))
+      .for("update");
 
-  if (!emprestimo) {
-    throw new AppError("Empréstimo não encontrado ou já devolvido.", 404);
-  }
+    if (!emprestimo) {
+      throw new AppError("Empréstimo não encontrado.", 404, "NAO_ENCONTRADO");
+    }
 
-  const [exemplar] = await db
-    .select()
-    .from(exemplares)
-    .where(eq(exemplares.id, emprestimo.exemplarId));
+    if (contexto.papel === "gestor_giroteca") {
+      const [exemplar] = await tx
+        .select({ girotecaId: exemplares.girotecaId })
+        .from(exemplares)
+        .where(eq(exemplares.id, emprestimo.exemplarId));
 
-  if (!exemplar) throw new AppError("Exemplar não encontrado.", 500);
+      if (!exemplar || exemplar.girotecaId !== contexto.girotecaId) {
+        throw new AppError("Não autorizado.", 403, "NAO_AUTORIZADO");
+      }
+    }
 
-  if (
-    contexto.papel === "gestor_giroteca" &&
-    exemplar.girotecaId !== contexto.girotecaId
-  ) {
-    throw new AppError("Não autorizado.", 403);
-  }
+    if (emprestimo.dataDevolucao !== null) {
+      throw new AppError(
+        "Este empréstimo já foi devolvido.",
+        409,
+        "JA_DEVOLVIDO",
+      );
+    }
 
-  if (emprestimo.renovacoes >= MAX_RENOVACOES) {
-    throw new AppError("Limite de renovações atingido.", 409);
-  }
+    const now = new Date();
+    const hoje = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+    if (emprestimo.dataPrevistaDevolucao < hoje) {
+      throw new AppError(
+        "Empréstimos em atraso não podem ser renovados. Registre a devolução primeiro.",
+        409,
+        "EM_ATRASO",
+      );
+    }
 
-  const now = new Date();
-  if (emprestimo.dataPrevistaDevolucao < now) {
-    throw new AppError("Não é possível renovar empréstimo em atraso.", 409);
-  }
+    if (emprestimo.renovacoes >= MAX_RENOVACOES) {
+      throw new AppError(
+        `Este empréstimo já foi renovado ${MAX_RENOVACOES} vezes. Registre a devolução.`,
+        409,
+        "LIMITE_RENOVACOES",
+      );
+    }
 
-  const novaData = new Date(emprestimo.dataPrevistaDevolucao);
-  novaData.setDate(novaData.getDate() + DIAS_PRAZO);
+    const novaData = new Date(emprestimo.dataPrevistaDevolucao);
+    novaData.setUTCDate(novaData.getUTCDate() + DIAS_PRAZO);
 
-  const [updated] = await db
-    .update(emprestimos)
-    .set({
-      dataPrevistaDevolucao: novaData,
-      renovacoes: emprestimo.renovacoes + 1,
-    })
-    .where(eq(emprestimos.id, id))
-    .returning();
+    const [updated] = await tx
+      .update(emprestimos)
+      .set({
+        dataPrevistaDevolucao: novaData,
+        renovacoes: emprestimo.renovacoes + 1,
+      })
+      .where(eq(emprestimos.id, input.emprestimoId))
+      .returning();
 
-  return updated;
+    return updated;
+  });
 }
 
 const emprestimoCols = {

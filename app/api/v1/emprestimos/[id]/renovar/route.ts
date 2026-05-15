@@ -13,11 +13,14 @@ export async function POST(request: Request, { params }: { params: Params }) {
   } catch (error) {
     if (error instanceof AppError) {
       return Response.json(
-        { error: error.message },
+        { code: error.code ?? null, message: error.message },
         { status: error.status_code },
       );
     }
     console.error(error);
-    return Response.json({ error: "Erro interno." }, { status: 500 });
+    return Response.json(
+      { code: null, message: "Erro interno." },
+      { status: 500 },
+    );
   }
 }

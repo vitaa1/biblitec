@@ -4,7 +4,8 @@ import { useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EmprestimoListagem } from "models/emprestimos";
-import { calcularDiasAtraso, formatarData, canRenovar } from "lib/emprestimos";
+import { calcularDiasAtraso, formatarData } from "lib/emprestimos";
+import { MAX_RENOVACOES } from "lib/emprestimos-config";
 
 interface EmprestimoLinhaProps {
   emprestimo: EmprestimoListagem;
@@ -104,18 +105,25 @@ export function EmprestimoLinha({
             >
               {devolvendo ? "Devolvendo..." : "Devolver"}
             </Button>
-            {canRenovar({
-              ...emprestimo,
-              dataEmprestimo: emprestimo.dataEmprestimo.toISOString(),
-              dataPrevistaDevolucao: dataPrevistoStr,
-              dataDevolucao: emprestimo.dataDevolucao
-                ? emprestimo.dataDevolucao.toISOString()
-                : null,
-            }) && (
-              <Button size="sm" variant="outline" onClick={onRenovar}>
-                Renovar
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={
+                !!emprestimo.dataDevolucao ||
+                atrasado ||
+                emprestimo.renovacoes >= MAX_RENOVACOES
+              }
+              title={
+                atrasado
+                  ? "Empréstimos em atraso não podem ser renovados"
+                  : emprestimo.renovacoes >= MAX_RENOVACOES
+                    ? "Já renovado o máximo de vezes"
+                    : undefined
+              }
+              onClick={onRenovar}
+            >
+              Renovar
+            </Button>
           </div>
           {erroDevolucao && (
             <p role="alert" className="text-xs text-red-600">
