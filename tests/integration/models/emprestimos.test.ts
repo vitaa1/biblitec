@@ -4,7 +4,7 @@ import {
   devolver,
   listarAtrasados,
   listarEmAberto,
-  renovar,
+  renovarEmprestimo,
 } from "models/emprestimos";
 import type { Contexto } from "lib/auth";
 import {
@@ -165,7 +165,10 @@ test("renovar() estende prazo e incrementa renovacoes", async () => {
     ctxGestorA,
   );
 
-  const renovado = await renovar(emprestimo.id, ctxGestorA);
+  const renovado = await renovarEmprestimo(
+    { emprestimoId: emprestimo.id },
+    ctxGestorA,
+  );
   expect(renovado.renovacoes).toBe(1);
   expect(
     renovado.dataPrevistaDevolucao > emprestimo.dataPrevistaDevolucao,
@@ -181,10 +184,12 @@ test("renovar() falha após 2 renovações", async () => {
     ctxGestorA,
   );
 
-  await renovar(emprestimo.id, ctxGestorA);
-  await renovar(emprestimo.id, ctxGestorA);
+  await renovarEmprestimo({ emprestimoId: emprestimo.id }, ctxGestorA);
+  await renovarEmprestimo({ emprestimoId: emprestimo.id }, ctxGestorA);
 
-  await expect(renovar(emprestimo.id, ctxGestorA)).rejects.toMatchObject({
+  await expect(
+    renovarEmprestimo({ emprestimoId: emprestimo.id }, ctxGestorA),
+  ).rejects.toMatchObject({
     status_code: 409,
   });
 });
@@ -203,7 +208,9 @@ test("renovar() falha se empréstimo está atrasado", async () => {
     .set({ dataPrevistaDevolucao: new Date("2000-01-01") })
     .where(eq(emprestimos.id, emprestimo.id));
 
-  await expect(renovar(emprestimo.id, ctxGestorA)).rejects.toMatchObject({
+  await expect(
+    renovarEmprestimo({ emprestimoId: emprestimo.id }, ctxGestorA),
+  ).rejects.toMatchObject({
     status_code: 409,
   });
 });

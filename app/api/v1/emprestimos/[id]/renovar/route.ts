@@ -4,6 +4,8 @@ import { renovarEmprestimo } from "models/emprestimos";
 
 type Params = Promise<{ id: string }>;
 
+const BUSINESS_CODES = new Set(["JA_DEVOLVIDO", "EM_ATRASO", "LIMITE_RENOVACOES"]);
+
 export async function POST(request: Request, { params }: { params: Params }) {
   try {
     const contexto = contextoFromRequest(request);
@@ -12,6 +14,12 @@ export async function POST(request: Request, { params }: { params: Params }) {
     return Response.json(emprestimo);
   } catch (error) {
     if (error instanceof AppError) {
+      if (error.code && BUSINESS_CODES.has(error.code)) {
+        return Response.json(
+          { code: error.code, message: error.message },
+          { status: error.status_code },
+        );
+      }
       return Response.json(
         { error: error.message },
         { status: error.status_code },
