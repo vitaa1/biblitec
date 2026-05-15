@@ -1,8 +1,6 @@
-const dotenv = require("dotenv");
+const { loadTestEnv } = require("./tests/lib/test-env");
 
-dotenv.config({
-  path: ".env.development",
-});
+loadTestEnv();
 
 const nextJest = require("next/jest");
 

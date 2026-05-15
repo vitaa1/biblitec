@@ -8,6 +8,7 @@ import {
   isNull,
   lt,
   or,
+  sql,
 } from "drizzle-orm";
 import { db } from "db/index";
 import { emprestimos, exemplares, leitores, livros } from "db/schema";
@@ -662,4 +663,31 @@ export async function listarHistorico(
     items: rows.map(mapListagem),
     total: Number(total),
   };
+}
+
+export async function contarResumoEmprestimos(
+  contexto: Contexto,
+): Promise<{ emAberto: number; atrasados: number }> {
+  const now = new Date();
+  const hoje = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  const [row] = await db
+    .select({
+      emAberto: count(),
+      atrasados: sql<string>`count(*) filter (where ${emprestimos.dataPrevistaDevolucao} < ${hoje})`,
+    })
+    .from(emprestimos)
+    .innerJoin(exemplares, eq(emprestimos.exemplarId, exemplares.id))
+    .where(
+      and(
+        isNull(emprestimos.dataDevolucao),
+        contexto.papel === "gestor_giroteca"
+          ? eq(exemplares.girotecaId, contexto.girotecaId!)
+          : undefined,
+      ),
+    );
+
+  return { emAberto: Number(row.emAberto), atrasados: Number(row.atrasados) };
 }

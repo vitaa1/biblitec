@@ -1,11 +1,10 @@
 const { spawn } = require("node:child_process");
 const path = require("node:path");
-const dotenv = require("dotenv");
 const retry = require("async-retry");
+const { Client } = require("pg");
+const { loadTestEnv } = require("./lib/test-env");
 
-dotenv.config({
-  path: path.join(process.cwd(), ".env.development"),
-});
+const { baseDbUrl, testDbName } = loadTestEnv();
 
 const nextBin = path.join(process.cwd(), "node_modules", ".bin", "next");
 const jestBin = path.join(process.cwd(), "node_modules", ".bin", "jest");
@@ -18,10 +17,12 @@ async function run() {
       await runCommand("npm", ["run", "services:up"]);
     }
 
-    console.log("\nAguardando o Postgres...");
-    await require("../infra/scripts/wait-for-postgres").waitForPostgres();
+    console.log(
+      `\nAguardando Postgres e preparando banco de teste (${testDbName})...`,
+    );
+    await ensureTestDatabase();
 
-    console.log("\nAplicando migrations...");
+    console.log("\nAplicando migrations no banco de teste...");
     await runCommand("npm", ["run", "db:migrate"]);
 
     console.log("\nSubindo a aplicação Next...");
@@ -38,6 +39,41 @@ async function run() {
   } finally {
     await shutdown();
   }
+}
+
+async function ensureTestDatabase() {
+  // Conecta no banco de manutenção "postgres" (sempre existe) para criar o
+  // banco de teste se necessário. Também faz papel de wait-for-postgres,
+  // já que o banco de teste ainda não existe e wait-for-postgres usaria a
+  // DATABASE_URL de teste.
+  const maintenanceUrl = baseDbUrl.replace(
+    /\/([^/?#]+)(\?[^#]*)?$/,
+    (_match, _name, qs) => `/postgres${qs ?? ""}`,
+  );
+
+  await retry(
+    async () => {
+      const client = new Client({ connectionString: maintenanceUrl });
+      try {
+        await client.connect();
+        const { rows } = await client.query(
+          "SELECT 1 FROM pg_database WHERE datname = $1",
+          [testDbName],
+        );
+        if (rows.length === 0) {
+          // testDbName vem de POSTGRES_DB de .env.development (que nós
+          // controlamos), mas escapamos aspas duplas por segurança já que
+          // CREATE DATABASE não aceita parâmetro.
+          const safe = testDbName.replace(/"/g, '""');
+          await client.query(`CREATE DATABASE "${safe}"`);
+          console.log(`✓ Banco de teste criado: ${testDbName}`);
+        }
+      } finally {
+        await client.end().catch(() => {});
+      }
+    },
+    { retries: 60, minTimeout: 500, maxTimeout: 2000 },
+  );
 }
 
 async function waitForWebServer() {
