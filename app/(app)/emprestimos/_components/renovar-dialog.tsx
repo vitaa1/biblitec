@@ -28,7 +28,7 @@ export function RenovarDialog({
   const [renovando, setRenovando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const dataAtualStr = emprestimo.dataPrevistaDevolucao.toString();
+  const dataAtualStr = emprestimo.dataPrevistaDevolucao.toISOString();
   const novaData = calcularNovaDataPrevista(dataAtualStr);
 
   async function handleRenovar() {

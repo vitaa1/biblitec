@@ -575,6 +575,8 @@ export async function listarComFiltros(
     .limit(LISTAGEM_POR_PAGINA)
     .offset((page - 1) * LISTAGEM_POR_PAGINA);
 
+  // Totais globais da giroteca — ignoram busca/turma intencionalmente,
+  // pois os badges nas abas refletem o estado geral, não o filtro ativo.
   const [{ total: totalEmAberto }] = await db
     .select({ total: count() })
     .from(emprestimos)

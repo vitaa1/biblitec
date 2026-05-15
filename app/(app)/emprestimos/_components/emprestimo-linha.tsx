@@ -118,7 +118,9 @@ export function EmprestimoLinha({
             )}
           </div>
           {erroDevolucao && (
-            <p className="text-xs text-red-600">{erroDevolucao}</p>
+            <p role="alert" className="text-xs text-red-600">
+              {erroDevolucao}
+            </p>
           )}
         </div>
       )}
