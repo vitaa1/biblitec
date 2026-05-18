@@ -16,7 +16,23 @@ import { RenovarDialog } from "./renovar-dialog";
 
 type Aba = "em_aberto" | "atrasados" | "historico";
 
-function parseDatesItem(raw: EmprestimoListagem): EmprestimoListagem {
+// JSON.parse produz strings onde EmprestimoListagem espera Date — esse tipo torna a fronteira explícita
+type EmprestimoListagemRaw = Omit<
+  EmprestimoListagem,
+  "dataEmprestimo" | "dataPrevistaDevolucao" | "dataDevolucao"
+> & {
+  dataEmprestimo: string;
+  dataPrevistaDevolucao: string;
+  dataDevolucao: string | null;
+};
+type ResultadoListagemRaw = Omit<ResultadoListagem, "items"> & {
+  items: EmprestimoListagemRaw[];
+};
+type ResultadoHistoricoRaw = Omit<ResultadoHistorico, "items"> & {
+  items: EmprestimoListagemRaw[];
+};
+
+function parseDatesItem(raw: EmprestimoListagemRaw): EmprestimoListagem {
   return {
     ...raw,
     dataEmprestimo: new Date(raw.dataEmprestimo),
@@ -42,8 +58,8 @@ export function EmprestimosView({ initialData }: EmprestimosViewProps) {
 
   const abortRef = useRef<AbortController | null>(null);
   const buscaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isMounted = useRef(false);
-  const isFirstBuscaRender = useRef(true);
+  const isMounted = useRef(false); // guard do Effect de aba: evita fetch na montagem inicial
+  const isFirstBuscaRender = useRef(true); // guard próprio: isMounted já é true quando Effect 2 roda
 
   const buscarDados = useCallback(
     async (abaAtiva: Aba, buscaAtiva: string, turmaAtiva: string) => {
@@ -64,20 +80,20 @@ export function EmprestimosView({ initialData }: EmprestimosViewProps) {
         if (!res.ok) return;
 
         if (abaAtiva === "historico") {
-          const json: ResultadoHistorico = await res.json();
+          const json: ResultadoHistoricoRaw = await res.json();
           setDadosHistorico({
             ...json,
             items: json.items.map(parseDatesItem),
           });
         } else {
-          const json: ResultadoListagem = await res.json();
+          const json: ResultadoListagemRaw = await res.json();
           setDados({
             ...json,
             items: json.items.map(parseDatesItem),
           });
         }
       } catch (e) {
-        if ((e as Error).name !== "AbortError") {
+        if (!(e instanceof Error) || e.name !== "AbortError") {
           console.error(e);
         }
       } finally {

@@ -228,3 +228,30 @@ test("GET /api/v1/emprestimos?aba=historico não retorna em aberto", async () =>
   const body = await res.json();
   expect(body.items).toHaveLength(0);
 });
+
+test("GET /api/v1/emprestimos datas retornadas são strings ISO válidas", async () => {
+  // Garante que parseDatesItem (cliente) consegue converter os campos de data
+  // sem lançar TypeError — o bug original era .toISOString() em string JSON
+  const livro = await criarLivro();
+  const exemplar = await criarExemplar(livro.id, girotecaAId);
+  const leitor = await criarLeitor(girotecaAId);
+  await criarEmprestimo(exemplar.id, leitor.id, usuarioAId);
+
+  const res = await fetch(`${BASE}?aba=em_aberto`, {
+    headers: { Cookie: cookieGestorA },
+  });
+
+  expect(res.status).toBe(200);
+  const body = await res.json();
+  const item = body.items[0];
+
+  expect(typeof item.dataEmprestimo).toBe("string");
+  expect(new Date(item.dataEmprestimo).toISOString()).toBe(item.dataEmprestimo);
+
+  expect(typeof item.dataPrevistaDevolucao).toBe("string");
+  expect(new Date(item.dataPrevistaDevolucao).toISOString()).toBe(
+    item.dataPrevistaDevolucao,
+  );
+
+  expect(item.dataDevolucao).toBeNull();
+});
