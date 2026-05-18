@@ -16,6 +16,15 @@ import { RenovarDialog } from "./renovar-dialog";
 
 type Aba = "em_aberto" | "atrasados" | "historico";
 
+function parseDatesItem(raw: EmprestimoListagem): EmprestimoListagem {
+  return {
+    ...raw,
+    dataEmprestimo: new Date(raw.dataEmprestimo),
+    dataPrevistaDevolucao: new Date(raw.dataPrevistaDevolucao),
+    dataDevolucao: raw.dataDevolucao ? new Date(raw.dataDevolucao) : null,
+  };
+}
+
 interface EmprestimosViewProps {
   initialData: ResultadoListagem;
 }
@@ -34,6 +43,7 @@ export function EmprestimosView({ initialData }: EmprestimosViewProps) {
   const abortRef = useRef<AbortController | null>(null);
   const buscaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMounted = useRef(false);
+  const isFirstBuscaRender = useRef(true);
 
   const buscarDados = useCallback(
     async (abaAtiva: Aba, buscaAtiva: string, turmaAtiva: string) => {
@@ -55,10 +65,16 @@ export function EmprestimosView({ initialData }: EmprestimosViewProps) {
 
         if (abaAtiva === "historico") {
           const json: ResultadoHistorico = await res.json();
-          setDadosHistorico(json);
+          setDadosHistorico({
+            ...json,
+            items: json.items.map(parseDatesItem),
+          });
         } else {
           const json: ResultadoListagem = await res.json();
-          setDados(json);
+          setDados({
+            ...json,
+            items: json.items.map(parseDatesItem),
+          });
         }
       } catch (e) {
         if ((e as Error).name !== "AbortError") {
@@ -83,7 +99,10 @@ export function EmprestimosView({ initialData }: EmprestimosViewProps) {
 
   // Debounce busca/turma changes
   useEffect(() => {
-    if (!isMounted.current) return;
+    if (isFirstBuscaRender.current) {
+      isFirstBuscaRender.current = false;
+      return;
+    }
     if (buscaTimerRef.current) clearTimeout(buscaTimerRef.current);
     buscaTimerRef.current = setTimeout(() => {
       buscarDados(aba, busca, turma);
